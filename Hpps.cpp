@@ -12,81 +12,108 @@
 
 using namespace llvm;
 
-namespace {
-struct Hpps : public FunctionPass {
-  static char ID;
-  Hpps() : FunctionPass(ID) {}
+namespace
+{
+  struct Hpps : public FunctionPass
+  {
+    static char ID;
+    Hpps() : FunctionPass(ID) {}
 
-  // Run over a single function
-  bool runOnFunction(Function &Func) override {
-    std::vector<Instruction *> worklist;
+    // Run over a single function
+    bool runOnFunction(Function &Func) override
+    {
+      // Reference to unroll
+      std::vector<Value *> from; // Value that depend on
+      std::vector<Value *> to; // Value that depend to
 
-    // Vector of min and max value-ranges
-    std::vector<StringRef> ref;
-    std::vector<int> minRange;
-    std::vector<int> maxRange;
+      // Found range
+      std::vector<Value *> ranged; // Reference to the value found
+      std::vector<int> minRange;
+      std::vector<int> maxRange;
 
-    // Run over all basic blocks in the function
-    for (BasicBlock &BB : Func) {
-      // Print out the name of the basic block if it has one, and then the
-      // number of instructions that it contains
-      errs() << "Basic block (name=" << BB.getName() << ") has " << BB.size()
-             << " instructions.\n";
+      // Run over all basic blocks in the function
+      for (BasicBlock &BB : Func)
+      {
+        // Run over all instructions in the basic block
+        for (Instruction &I : BB)
+        {
+          // The next statement works since operator<<(ostream&,...)
+          // is overloaded for Instruction&
+          errs() << I << "\n";
 
-      // Run over all instructions in the basic block
-      for (Instruction &I : BB) {
-        // The next statement works since operator<<(ostream&,...)
-        // is overloaded for Instruction&
-        errs() << I << "\n";
+          // if (auto *operInst = dyn_cast<BinaryOperator>(&I))
+          // {
+          //   errs() << "Operand" << operInst->getName() << "\n";
+          // }
 
-        // Check if the instruction is a store
-        if (auto *strInst = dyn_cast<StoreInst>(&I)) {
-          // Get value of right operand (assignment)
-          Value *oper = strInst->getOperand(0);
-          Value *operRef = strInst->getOperand(1);
-          if (operRef->hasName()) {
-            StringRef stringRef = oper->getName();
-            ref.push_back(stringRef);
-          }
+          // if (auto *loadInst = dyn_cast<LoadInst>(&I))
+          // {
+          //   errs() << "Load" << loadInst->getPointerOperand()->getName() << "\n";
+          // }
 
-          // If does not have a name, then it is a constant
-          if (oper->hasName()) {
-            errs() << "   -REG: "
-                   << "(" << oper->getName() << ")\n";
+          // STORE INSTRUCTION (Check all store in first cycle)
+          if (auto *strInst = dyn_cast<StoreInst>(&I))
+          { 
+            // Get operand0 (value) and operand1 (assigned)
+            Value *oper0 = strInst->getOperand(0);
+            Value *oper1 = strInst->getOperand(1);
 
-            minRange.push_back(-1);
-            maxRange.push_back(-1);
-          } else {
-            errs() << "   -CONST: "
-                   << "\n";
-            if (ConstantInt *CI = dyn_cast<ConstantInt>(oper)) {
-              errs() << "   -> Value=" << CI->getValue() << "\n";
-              errs() << "   -> BitWidth=" << CI->getBitWidth() << "\n";
-              minRange.push_back(CI->getZExtValue());
-              maxRange.push_back(CI->getZExtValue());
-            } else {
-              errs() << "   -> (?)\n";
-              minRange.push_back(-1);
-              maxRange.push_back(-1);
+            // Oper0 is reference
+            if (oper0->hasName())
+            {
+              errs() << "   -Ref:" << oper0->getName() << "\n";
+              from.push_back(oper1);
+              to.push_back(oper0);
             }
+
+            // Oper0 is constant
+            else
+            {
+              if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+              {
+                errs() << "   -Const:" << CI->getZExtValue() << "\n";
+                ranged.push_back(oper1);
+                minRange.push_back(CI->getZExtValue());
+                maxRange.push_back(CI->getZExtValue());
+              }
+            }
+
+            // for (User *U : oper1->users())
+            // {
+            //   if (Instruction *Inst = dyn_cast<Instruction>(U))
+            //   {
+            //     errs() << "-USED:" << *Inst << "\n";
+
+            //     for (Use &U : Inst->operands())
+            //     {
+            //       Value *v = U.get();
+            //       errs() << "-DEF:" << v->getName() << "\n";
+            //     }
+            //   }
+            // }
           }
 
-          worklist.push_back(&I);
+          errs() << "\n";
         }
-
-        errs() << "\n";
       }
-    }
 
-    errs() << "\nVALUE RANGES:\n";
-    for (int i = 0; i < minRange.size(); ++i) {
-      errs() << ref.at(i) << "(" << minRange.at(i) << ", " << maxRange.at(i)
-             << ")\n";
-    }
+      // Print references
+      errs() << "\nREFERENCES:\n";
+      for (auto i = 0; i < from.size(); ++i)
+      {
+        errs() << to.at(i)->getName() << "(" << to.at(i) << ") <-" << from.at(i)->getName() << "\n";
+      }
 
-    return false;
-  }
-}; // end of struct Hpps
+      // Print value range computed
+      errs() << "\nVALUE RANGES:\n";
+      for (auto i = 0; i < minRange.size(); ++i)
+      {
+        errs() << ranged.at(i)->getName() << "(" << minRange.at(i) << ", " << maxRange.at(i) << ")\n";
+      }
+
+      return false;
+    }
+  }; // namespace
 } // end of anonymous namespace
 
 char Hpps::ID = 0;
