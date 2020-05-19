@@ -6,6 +6,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/InstrTypes.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -22,14 +23,21 @@ namespace
     // Run over a single function
     bool runOnFunction(Function &Func) override
     {
-      // Reference to unroll
-      std::vector<Value *> from; // Value that depend on
-      std::vector<Value *> to; // Value that depend to
+      // Keep reference of value still left to find the ranges
+      // 'from' is unknown, it depends on 'to' and 'toValue'
+      // from = to + toValue
+      std::vector<Value *> from;
+      std::vector<Value *> to;
+      std::vector<int> toValue;
+      std::vector<unsigned> toOps;
 
-      // Found range
-      std::vector<Value *> ranged; // Reference to the value found
-      std::vector<int> minRange;
-      std::vector<int> maxRange;
+      // Reference of variabiles for which range has been found
+      std::vector<Value *> ranged; // Reference to the variable
+      std::vector<int> minRange;   // Min range of variable
+      std::vector<int> maxRange;   // Max range of variable
+
+      // Keep reference of variables in load instructions
+      std::vector<Value *> loadRef;
 
       // Run over all basic blocks in the function
       for (BasicBlock &BB : Func)
@@ -37,36 +45,69 @@ namespace
         // Run over all instructions in the basic block
         for (Instruction &I : BB)
         {
-          // The next statement works since operator<<(ostream&,...)
-          // is overloaded for Instruction&
+          // Print instruction
           errs() << I << "\n";
 
-          // if (auto *operInst = dyn_cast<BinaryOperator>(&I))
-          // {
-          //   errs() << "Operand" << operInst->getName() << "\n";
-          // }
+          // When instruction is Add or Sub
+          // Save operand0 (variable) and operand1 (int)
+          // 'to' -> Previous load instruction value
+          // 'from' -> Current assigned variable value
+          // 'toValue' -> Operand1 int value
+          if (auto *operInst = dyn_cast<BinaryOperator>(&I))
+          {
+            Value *oper0 = operInst->getOperand(0);
+            Value *oper1 = operInst->getOperand(1);
 
-          // if (auto *loadInst = dyn_cast<LoadInst>(&I))
-          // {
-          //   errs() << "Load" << loadInst->getPointerOperand()->getName() << "\n";
-          // }
+            if (operInst->getOpcode() == Instruction::Add)
+            {
+              errs() << "   -Stored:" << operInst->getName() << "\n";
 
-          // STORE INSTRUCTION (Check all store in first cycle)
+              // Store reference of variable still to find range
+              from.push_back(operInst);
+              to.push_back(loadRef.at(0));
+              toOps.push_back(operInst->getOpcode());
+              if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+              {
+                toValue.push_back(CI->getZExtValue());
+              }
+
+              // Remove previous used load instruction value
+              loadRef.pop_back();
+            }
+            else if (operInst->getOpcode() == Instruction::Sub)
+            {
+            }
+          }
+
+          // When instruction is load, store reference to its variable
+          if (auto *loadInst = dyn_cast<LoadInst>(&I))
+          {
+            for (Use &U : loadInst->operands())
+            {
+              Value *v = U.get();
+              loadRef.push_back(v);
+            }
+          }
+
+          // When instruction is store
           if (auto *strInst = dyn_cast<StoreInst>(&I))
-          { 
+          {
             // Get operand0 (value) and operand1 (assigned)
             Value *oper0 = strInst->getOperand(0);
             Value *oper1 = strInst->getOperand(1);
 
-            // Oper0 is reference
+            // Store reference to variable still to find range
             if (oper0->hasName())
             {
               errs() << "   -Ref:" << oper0->getName() << "\n";
               from.push_back(oper1);
               to.push_back(oper0);
+
+              toValue.push_back(0);
+              toOps.push_back(Instruction::Add);
             }
 
-            // Oper0 is constant
+            // Store constant range value
             else
             {
               if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
@@ -77,20 +118,6 @@ namespace
                 maxRange.push_back(CI->getZExtValue());
               }
             }
-
-            // for (User *U : oper1->users())
-            // {
-            //   if (Instruction *Inst = dyn_cast<Instruction>(U))
-            //   {
-            //     errs() << "-USED:" << *Inst << "\n";
-
-            //     for (Use &U : Inst->operands())
-            //     {
-            //       Value *v = U.get();
-            //       errs() << "-DEF:" << v->getName() << "\n";
-            //     }
-            //   }
-            // }
           }
 
           errs() << "\n";
@@ -101,7 +128,20 @@ namespace
       errs() << "\nREFERENCES:\n";
       for (auto i = 0; i < from.size(); ++i)
       {
-        errs() << to.at(i)->getName() << "(" << to.at(i) << ") <-" << from.at(i)->getName() << "\n";
+        errs() << to.at(i)->getName() << "+" << toValue.at(i) << "<-" << from.at(i)->getName() << "\n";
+
+        // Search variable reference inside already found ranges
+        for (int v = 0; v < ranged.size(); ++v)
+        {
+          // When range found, add a new found range
+          if (to.at(i) == ranged.at(v))
+          {
+            errs() << "-FOUND:" << ranged.at(v)->getName() << "\n";
+            minRange.push_back(minRange.at(v) + toValue.at(i));
+            maxRange.push_back(minRange.at(v) + toValue.at(i));
+            ranged.push_back(from.at(i));
+          }
+        }
       }
 
       // Print value range computed
