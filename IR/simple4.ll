@@ -1,5 +1,5 @@
-; ModuleID = '../../../code/simple.c'
-source_filename = "../../../code/simple.c"
+; ModuleID = '../../../code/simple4.c'
+source_filename = "../../../code/simple4.c"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
@@ -10,12 +10,24 @@ entry:
   %a = alloca i32, align 4
   %b = alloca i32, align 4
   %c = alloca i32, align 4
+  %d = alloca i32, align 4
   store i32 0, i32* %retval, align 4
-  store i32 0, i32* %a, align 4
-  store i32 10, i32* %b, align 4
+  store i32 2, i32* %a, align 4
   %0 = load i32, i32* %a, align 4
-  %add = add nsw i32 %0, 3
-  store i32 %add, i32* %c, align 4
+  %1 = load i32, i32* %a, align 4
+  %sub = sub nsw i32 %0, %1
+  store i32 %sub, i32* %b, align 4
+  %2 = load i32, i32* %a, align 4
+  %3 = load i32, i32* %b, align 4
+  %add = add nsw i32 %2, %3
+  %add1 = add nsw i32 %add, 3
+  store i32 %add1, i32* %c, align 4
+  %4 = load i32, i32* %a, align 4
+  %5 = load i32, i32* %b, align 4
+  %add2 = add nsw i32 %4, %5
+  %6 = load i32, i32* %c, align 4
+  %add3 = add nsw i32 %add2, %6
+  store i32 %add3, i32* %d, align 4
   ret i32 0
 }
 
