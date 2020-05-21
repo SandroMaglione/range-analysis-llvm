@@ -1,0 +1,86 @@
+	discovered a new reachable node %entry
+  %retval = alloca i32, align 4
+
+  %a = alloca i32, align 4
+
+  %b = alloca i32, align 4
+
+  %c = alloca i32, align 4
+
+  %d = alloca i32, align 4
+
+  store i32 0, i32* %retval, align 4
+   -Range found: 0
+
+  store i32 9, i32* %a, align 4
+   -Range found: 9
+
+  %0 = load i32, i32* %a, align 4
+   -Load: a
+
+  %sub = sub nsw i32 %0, 6
+   -Var: sub
+     -Op0: 
+     -Op1: 
+
+  store i32 %sub, i32* %b, align 4
+   -Ref: sub
+
+  %1 = load i32, i32* %b, align 4
+   -Load: b
+
+  %add = add nsw i32 3, %1
+   -Var: add
+     -Op0: 
+     -Op1: 
+
+  store i32 %add, i32* %c, align 4
+   -Ref: add
+
+  %2 = load i32, i32* %c, align 4
+   -Load: c
+
+  %3 = load i32, i32* %c, align 4
+   -Load: c
+
+  %add1 = add nsw i32 %2, %3
+   -Var: add1
+     -Op0: 
+     -Op1: 
+
+  store i32 %add1, i32* %d, align 4
+   -Ref: add1
+
+  ret i32 0
+
+
+--- REFERENCES ---
+sub(a, 6)
+  sub = 9 - 6 = 3
+
+b(sub, 0)
+  b = 3 + 0 = 3
+
+add(3, b)
+  add = 3 + 3 = 6
+
+c(add, 0)
+  c = 6 + 0 = 6
+
+add1(c, c)
+  add1 = 6 + 6 = 12
+
+d(add1, 0)
+  d = 12 + 0 = 12
+
+
+--- VALUE RANGES ---
+ retval(0, 0)
+ a(9, 9)
+ sub(3, 3)
+ b(3, 3)
+ add(6, 6)
+ c(6, 6)
+ add1(12, 12)
+ d(12, 12)
+	discovered a new reachable node %entry

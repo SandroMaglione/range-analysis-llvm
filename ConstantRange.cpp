@@ -21,17 +21,19 @@ namespace
     static char ID;
     Hpps() : FunctionPass(ID) {}
 
-    // Run over a single function
+    // Run over a single function (main)
     bool runOnFunction(Function &Func) override
     {
-      // Null Value reference
+      // Create a Null Value reference
+      // Assigned as placeholder when no variable reference available
       LLVMContext &context = Func.getContext();
       Value *nullValue = ConstantInt::get(Type::getInt32Ty(context), -1);
 
-      // Keep reference of value still left to find the ranges
-      // 'from' is unknown, it depends on 'to', 'toValue', and 'toOps' ('+' or '-')
+      // Keep reference of values still left to find the ranges
+      // 'from' is unknown, it depends on 'to', 'to2', 'toValue', and 'toOps' ('+' or '-')
+      //
       // from = to toOps toValue (a = b + 1)
-      // from = toValue toOps to (a = 1 + b)
+      // from = toValue toOps to2 (a = 1 + b)
       // from = to toOps to2 (a = b + c)
       std::vector<Value *> from;
       std::vector<Value *> to;
@@ -39,12 +41,13 @@ namespace
       std::vector<int> toValue;
       std::vector<unsigned> toOps;
 
-      // Reference of variabiles for which range has been found
-      std::vector<Value *> ranged; // Reference to the variable
+      // Reference of variables for which range has been found
+      // Note: Since no branches, minRange = maxRange (constant values)
+      std::vector<Value *> ranged; // Reference to the variable (name)
       std::vector<int> minRange;   // Min range of variable
       std::vector<int> maxRange;   // Max range of variable
 
-      // Keep reference of variables in load instructions
+      // Keep reference of variables (alias) from load instructions
       std::vector<Value *> loadRef;
 
       // Run over all basic blocks in the function
@@ -56,9 +59,11 @@ namespace
           // Print instruction
           errs() << I << "\n";
 
-          // When instruction is load, store reference to its variables
+          // When instruction is load, store reference (alias) to its real variables
           if (auto *loadInst = dyn_cast<LoadInst>(&I))
           {
+            // Cycle over all the operands and store them for later use in 'loadRef'
+            // Used to identify references in binary operations
             for (Use &U : loadInst->operands())
             {
               Value *v = U.get();
@@ -71,6 +76,7 @@ namespace
           // Save operand0 (reference/constant) and operand1 (reference/constant)
           if (auto *operInst = dyn_cast<BinaryOperator>(&I))
           {
+            // Get operands from binary operation
             Value *oper0 = operInst->getOperand(0);
             Value *oper1 = operInst->getOperand(1);
 
@@ -78,17 +84,29 @@ namespace
             from.push_back(operInst);               // left-hand side of the operation
             toOps.push_back(operInst->getOpcode()); // '+' ot '-'
 
-            // Store constants/references
-            errs() << "   -Operation: " << operInst->getName() << "\n";
+            // Print variable assigned and name of operands
+            errs() << "   -Var: " << operInst->getName() << "\n";
+            errs() << "     -Op0: " << oper0->getName() << "\n";
+            errs() << "     -Op1: " << oper1->getName() << "\n";
 
             // a = b + 1 (variable + constant)
             // Get reference from previous load instruction
             if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
             {
               toValue.push_back(CI->getZExtValue());
-              to.push_back(loadRef.at(0));
               to2.push_back(nullValue);
-              loadRef.pop_back();
+
+              // If operand0 is reference (and not an alias) store it
+              if (oper0->hasName())
+              {
+                to.push_back(oper0);
+              }
+              // Otherwise get value from previous load instruction (alias)
+              else
+              {
+                to.push_back(loadRef.at(0));
+                loadRef.pop_back();
+              }
             }
 
             // a = 1 + b (constant + variable)
@@ -97,30 +115,54 @@ namespace
             {
               toValue.push_back(CI->getZExtValue());
               to.push_back(nullValue);
-              to2.push_back(loadRef.at(0));
-              loadRef.pop_back();
+
+              // If operand1 is reference (and not an alias) store it
+              if (oper1->hasName())
+              {
+                to2.push_back(oper1);
+              }
+              // Otherwise get value from previous load instruction (alias)
+              else
+              {
+                to2.push_back(loadRef.at(0));
+                loadRef.pop_back();
+              }
             }
 
             // a = b + c (variable + variable)
             // Get reference from two previous load instructions
             else
             {
-              // It may be that there are x2 'to'
-              toValue.push_back(0);
-              to.push_back(loadRef.at(0));
+              toValue.push_back(0); // Placeholder
 
-              // TODO: When a = a + b + 3, the IR creates two loads for a and b, then
-              // it does the 'add' = a + b, and then uses 'add1' = 'add' + 3. The problem
-              // is that 'add' is not in loadRef, so there is an error!
-              //
-              // Same with a = a + b + c, 'add' = a + b, then load of c and 'add1' = 'add' + c,
-              // but since those are both variables, and loadRef contains only c, calling
-              // loadRef.at(1) gives error! 
-              to2.push_back(loadRef.at(1));
-
-              // Remove previous used load instruction value
-              loadRef.pop_back();
-              loadRef.pop_back();
+              // Both operand0 and operand1 as reference
+              if (oper0->hasName() && oper1->hasName())
+              {
+                to.push_back(oper0);
+                to2.push_back(oper1);
+              }
+              // Operand0 from load and operand1 as reference
+              else if (!oper0->hasName() && oper1->hasName())
+              {
+                to.push_back(loadRef.at(0));
+                to2.push_back(oper1);
+                loadRef.pop_back();
+              }
+              // Operand1 from load and operand0 as reference
+              else if (oper0->hasName() && !oper1->hasName())
+              {
+                to.push_back(oper0);
+                to2.push_back(loadRef.at(0));
+                loadRef.pop_back();
+              }
+              // Both operand0 and operand1 from load (alias)
+              else
+              {
+                to.push_back(loadRef.at(0));
+                to2.push_back(loadRef.at(1));
+                loadRef.pop_back();
+                loadRef.pop_back();
+              }
             }
           }
 
@@ -146,12 +188,14 @@ namespace
             }
 
             // Store constant range value (Value-Range Found!)
-            // a = 1
+            // a = 1 (variable assigned constant value)
             else
             {
               if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
               {
                 errs() << "   -Range found: " << CI->getZExtValue() << "\n";
+
+                // Store found value-range
                 ranged.push_back(oper1);
                 minRange.push_back(CI->getZExtValue());
                 maxRange.push_back(CI->getZExtValue());
@@ -163,7 +207,7 @@ namespace
         }
       }
 
-      // Resolve references
+      // Resolve references/dependencies
       errs() << "\n--- REFERENCES ---\n";
       for (unsigned i = 0; i < from.size(); ++i)
       {
@@ -190,16 +234,16 @@ namespace
         int refValue1 = -1;
         int refValue2 = -1;
 
+        // If 'to' is placeholder, then value is constant number
         if (to.at(i) == nullValue)
         {
           refValue1 = toValue.at(i);
-          // errs() << "- F(const):" << refValue1 << "\n";
         }
 
+        // If 'to2' is placeholder, then value is constant number
         if (to2.at(i) == nullValue)
         {
           refValue2 = toValue.at(i);
-          // errs() << "- F(const):" << refValue2 << "\n";
         }
 
         // Search variable reference inside already found ranges
@@ -210,7 +254,6 @@ namespace
           {
             // When range found, add a new found range
             refValue1 = minRange.at(v);
-            // errs() << "- F(to):" << ranged.at(v)->getName() << " (" << refValue1 << "\n\n";
           }
 
           // When found value of 'to2' in 'ranged'
@@ -218,10 +261,10 @@ namespace
           {
             // When range found, add a new found range
             refValue2 = minRange.at(v);
-            // errs() << "- F(to2):" << ranged.at(v)->getName() << " (" << refValue2 << "\n\n";
           }
         }
 
+        // Compute found value-range from resolved dependencies
         if (toOps.at(i) == Instruction::Add)
         {
           minRange.push_back(refValue1 + refValue2);
@@ -251,7 +294,7 @@ namespace
 } // end of anonymous namespace
 
 char Hpps::ID = 0;
-static RegisterPass<Hpps> X("hpps", "Hpps World Pass",
+static RegisterPass<Hpps> X("const-range", "Constant Range Pass",
                             false /* Only looks at CFG */,
                             false /* Analysis Pass */);
 

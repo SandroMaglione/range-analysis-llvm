@@ -1,0 +1,140 @@
+	discovered a new reachable node %entry
+  %retval = alloca i32, align 4
+
+  %a = alloca i32, align 4
+
+  %b = alloca i32, align 4
+
+  %c = alloca i32, align 4
+
+  store i32 0, i32* %retval, align 4
+   -Range found: 0
+
+  store i32 0, i32* %a, align 4
+   -Range found: 0
+
+  store i32 10, i32* %b, align 4
+   -Range found: 10
+
+  %0 = load i32, i32* %a, align 4
+   -Load: a
+
+  %add = add nsw i32 3, %0
+   -Var: add
+     -Op0: 
+     -Op1: 
+
+  store i32 %add, i32* %c, align 4
+   -Ref: add
+
+  %1 = load i32, i32* %b, align 4
+   -Load: b
+
+  %2 = load i32, i32* %c, align 4
+   -Load: c
+
+  %sub = sub nsw i32 %1, %2
+   -Var: sub
+     -Op0: 
+     -Op1: 
+
+  store i32 %sub, i32* %a, align 4
+   -Ref: sub
+
+  %3 = load i32, i32* %a, align 4
+   -Load: a
+
+  %add1 = add nsw i32 %3, 7
+   -Var: add1
+     -Op0: 
+     -Op1: 
+
+  %add2 = add nsw i32 %add1, 3
+   -Var: add2
+     -Op0: add1
+     -Op1: 
+
+  store i32 %add2, i32* %c, align 4
+   -Ref: add2
+
+  %4 = load i32, i32* %b, align 4
+   -Load: b
+
+  %5 = load i32, i32* %b, align 4
+   -Load: b
+
+  %add3 = add nsw i32 %4, %5
+   -Var: add3
+     -Op0: 
+     -Op1: 
+
+  %sub4 = sub nsw i32 %add3, 1
+   -Var: sub4
+     -Op0: add3
+     -Op1: 
+
+  %6 = load i32, i32* %a, align 4
+   -Load: a
+
+  %sub5 = sub nsw i32 %sub4, %6
+   -Var: sub5
+     -Op0: sub4
+     -Op1: 
+
+  store i32 %sub5, i32* %b, align 4
+   -Ref: sub5
+
+  ret i32 0
+
+
+--- REFERENCES ---
+add(3, a)
+  add = 3 + 0 = 3
+
+c(add, 0)
+  c = 3 + 0 = 3
+
+sub(b, c)
+  sub = 10 - 3 = 7
+
+a(sub, 0)
+  a = 7 + 0 = 7
+
+add1(a, 7)
+  add1 = 7 + 7 = 14
+
+add2(add1, 3)
+  add2 = 14 + 3 = 17
+
+c(add2, 0)
+  c = 17 + 0 = 17
+
+add3(b, b)
+  add3 = 10 + 10 = 20
+
+sub4(add3, 1)
+  sub4 = 20 - 1 = 19
+
+sub5(sub4, a)
+  sub5 = 19 - 7 = 12
+
+b(sub5, 0)
+  b = 12 + 0 = 12
+
+
+--- VALUE RANGES ---
+ retval(0, 0)
+ a(0, 0)
+ b(10, 10)
+ add(3, 3)
+ c(3, 3)
+ sub(7, 7)
+ a(7, 7)
+ add1(14, 14)
+ add2(17, 17)
+ c(17, 17)
+ add3(20, 20)
+ sub4(19, 19)
+ sub5(12, 12)
+ b(12, 12)
+	discovered a new reachable node %entry

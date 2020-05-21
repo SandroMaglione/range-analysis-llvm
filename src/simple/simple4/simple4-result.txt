@@ -1,0 +1,113 @@
+	discovered a new reachable node %entry
+  %retval = alloca i32, align 4
+
+  %a = alloca i32, align 4
+
+  %b = alloca i32, align 4
+
+  %c = alloca i32, align 4
+
+  %d = alloca i32, align 4
+
+  store i32 0, i32* %retval, align 4
+   -Range found: 0
+
+  store i32 2, i32* %a, align 4
+   -Range found: 2
+
+  %0 = load i32, i32* %a, align 4
+   -Load: a
+
+  %1 = load i32, i32* %a, align 4
+   -Load: a
+
+  %sub = sub nsw i32 %0, %1
+   -Var: sub
+     -Op0: 
+     -Op1: 
+
+  store i32 %sub, i32* %b, align 4
+   -Ref: sub
+
+  %2 = load i32, i32* %a, align 4
+   -Load: a
+
+  %3 = load i32, i32* %b, align 4
+   -Load: b
+
+  %add = add nsw i32 %2, %3
+   -Var: add
+     -Op0: 
+     -Op1: 
+
+  %add1 = add nsw i32 %add, 3
+   -Var: add1
+     -Op0: add
+     -Op1: 
+
+  store i32 %add1, i32* %c, align 4
+   -Ref: add1
+
+  %4 = load i32, i32* %a, align 4
+   -Load: a
+
+  %5 = load i32, i32* %b, align 4
+   -Load: b
+
+  %add2 = add nsw i32 %4, %5
+   -Var: add2
+     -Op0: 
+     -Op1: 
+
+  %6 = load i32, i32* %c, align 4
+   -Load: c
+
+  %add3 = add nsw i32 %add2, %6
+   -Var: add3
+     -Op0: add2
+     -Op1: 
+
+  store i32 %add3, i32* %d, align 4
+   -Ref: add3
+
+  ret i32 0
+
+
+--- REFERENCES ---
+sub(a, a)
+  sub = 2 - 2 = 0
+
+b(sub, 0)
+  b = 0 + 0 = 0
+
+add(a, b)
+  add = 2 + 0 = 2
+
+add1(add, 3)
+  add1 = 2 + 3 = 5
+
+c(add1, 0)
+  c = 5 + 0 = 5
+
+add2(a, b)
+  add2 = 2 + 0 = 2
+
+add3(add2, c)
+  add3 = 2 + 5 = 7
+
+d(add3, 0)
+  d = 7 + 0 = 7
+
+
+--- VALUE RANGES ---
+ retval(0, 0)
+ a(2, 2)
+ sub(0, 0)
+ b(0, 0)
+ add(2, 2)
+ add1(5, 5)
+ c(5, 5)
+ add2(2, 2)
+ add3(7, 7)
+ d(7, 7)
+	discovered a new reachable node %entry

@@ -10,49 +10,59 @@
   %d = alloca i32, align 4
 
   store i32 0, i32* %retval, align 4
-   -Const:0
+   -Range found: 0
 
   store i32 0, i32* %a, align 4
-   -Const:0
+   -Range found: 0
 
   store i32 10, i32* %b, align 4
-   -Const:10
+   -Range found: 10
 
   %0 = load i32, i32* %a, align 4
+   -Load: a
 
   %add = add nsw i32 %0, 3
-   -Stored(Add):add
+   -Var: add
+     -Op0: 
+     -Op1: 
 
   store i32 %add, i32* %c, align 4
-   -Ref:add
+   -Ref: add
 
   %1 = load i32, i32* %b, align 4
+   -Load: b
 
   %add1 = add nsw i32 %1, 10
-   -Stored(Add):add1
+   -Var: add1
+     -Op0: 
+     -Op1: 
 
   store i32 %add1, i32* %d, align 4
-   -Ref:add1
+   -Ref: add1
 
   ret i32 0
 
 
-REFERENCES:
-a+3<-add
--FOUND:a
-add+0<-c
--FOUND:add
-b+10<-add1
--FOUND:b
-add1+0<-d
--FOUND:add1
+--- REFERENCES ---
+add(a, 3)
+  add = 0 + 3 = 3
 
-VALUE RANGES:
-retval(0, 0)
-a(0, 0)
-b(10, 10)
-add(3, 3)
-c(3, 3)
-add1(20, 20)
-d(20, 20)
+c(add, 0)
+  c = 3 + 0 = 3
+
+add1(b, 10)
+  add1 = 10 + 10 = 20
+
+d(add1, 0)
+  d = 20 + 0 = 20
+
+
+--- VALUE RANGES ---
+ retval(0, 0)
+ a(0, 0)
+ b(10, 10)
+ add(3, 3)
+ c(3, 3)
+ add1(20, 20)
+ d(20, 20)
 	discovered a new reachable node %entry
