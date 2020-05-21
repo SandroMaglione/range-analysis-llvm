@@ -16,10 +16,10 @@ using namespace llvm;
 namespace
 {
 
-  struct Hpps : public FunctionPass
+  struct HppsConstantRange : public FunctionPass
   {
     static char ID;
-    Hpps() : FunctionPass(ID) {}
+    HppsConstantRange() : FunctionPass(ID) {}
 
     // Run over a single function (main)
     bool runOnFunction(Function &Func) override
@@ -293,13 +293,13 @@ namespace
   }; // namespace
 } // end of anonymous namespace
 
-char Hpps::ID = 0;
-static RegisterPass<Hpps> X("const-range", "Constant Range Pass",
+char HppsConstantRange::ID = 0;
+static RegisterPass<HppsConstantRange> X("const-range", "Constant Range Pass",
                             false /* Only looks at CFG */,
                             false /* Analysis Pass */);
 
 static RegisterStandardPasses Y(PassManagerBuilder::EP_EarlyAsPossible,
                                 [](const PassManagerBuilder &Builder,
                                    legacy::PassManagerBase &PM) {
-                                  PM.add(new Hpps());
+                                  PM.add(new HppsConstantRange());
                                 });
