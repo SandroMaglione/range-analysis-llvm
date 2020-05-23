@@ -44,9 +44,9 @@ namespace
                 errs() << "BB: " << BB->getName() << "\n";
 
                 // Run over all instructions in the basic block
-                for (BasicBlock::InstListType::reverse_iterator it =
-                         BB->getInstList().rbegin();
-                     it != BB->getInstList().rend(); it++)
+                for (BasicBlock::InstListType::iterator it =
+                         BB->getInstList().begin();
+                     it != BB->getInstList().end(); ++it)
                 {
                     // Get instruction from iterator
                     Instruction *I = &*it;
@@ -77,6 +77,25 @@ namespace
                         {
                             errs() << "Br-Complex\n";
 
+                            // Get previous cmp values
+                            ICmpInst::Predicate pred = listCmp.at(0);
+                            Value *oper0 = listCmpOpe0.at(0);
+                            Value *oper1 = listCmpOpe1.at(0);
+                            listCmp.pop_back();
+                            listCmpOpe0.pop_back();
+                            listCmpOpe1.pop_back();
+
+                            if (pred == ICmpInst::ICMP_SLT)
+                            {
+                                errs() << "SLT"
+                                       << "\n";
+                            }
+                            else if (pred == ICmpInst::ICMP_SLE)
+                            {
+                                errs() << "SLE"
+                                       << "\n";
+                            }
+
                             // Check successor0 if already visited
                             BasicBlock *next0 = brInst->getSuccessor(0);
                             std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next0);
@@ -102,17 +121,9 @@ namespace
                     {
                         errs() << "Cmp\n";
                         ICmpInst::Predicate pred = cmpInst->getPredicate();
-
-                        if (pred == ICmpInst::ICMP_SLT)
-                        {
-                            errs() << "SLT"
-                                   << "\n";
-                        }
-                        else if (pred == ICmpInst::ICMP_SLE)
-                        {
-                            errs() << "SLE"
-                                   << "\n";
-                        }
+                        listCmp.push_back(pred);
+                        listCmpOpe0.push_back(cmpInst->getOperand(0));
+                        listCmpOpe1.push_back(cmpInst->getOperand(1));
                     }
                     else if (auto *phiInst = dyn_cast<PHINode>(I))
                     {
