@@ -1,6 +1,8 @@
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Instructions.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -38,8 +40,24 @@ namespace
                      it != BB->getInstList().rend(); it++)
                 {
                     // Get instruction from iterator
-                    Instruction *p = &*it;
-                    errs() << p << "\n";
+                    Instruction *I = &*it;
+                    errs() << I << "\n";
+                    if (auto *operInst = dyn_cast<BinaryOperator>(I))
+                    {
+                        errs() << "Oper\n";
+                    }
+                    else if (auto *brInst = dyn_cast<BranchInst>(I))
+                    {
+                        errs() << "Br\n";
+                    }
+                    else if (auto *cmpInst = dyn_cast<CmpInst>(I))
+                    {
+                        errs() << "Cmp\n";
+                    }
+                    else if (auto *phiInst = dyn_cast<PHINode>(I))
+                    {
+                        errs() << "Phi\n";
+                    }
                 }
             }
 
