@@ -47,7 +47,7 @@ namespace
             // Entry block to workList
             workList.push_back(&Func.getEntryBlock());
 
-            // Run over all basic blocks in the function
+            // Loop on the worklist until all dependencies are resolved
             while (workList.size() != 0)
             {
                 // Get next BasicBlock in workList and remove it
@@ -57,6 +57,9 @@ namespace
                 // Mark entry basic block as visited
                 listRange.insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, emptyVector));
 
+                // Get index of 'listRange' of current basic block
+                std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator iterBB = listRange.find(BB);
+                
                 errs() << "BB: " << BB->getName() << "\n";
 
                 // Run over all instructions in the basic block
@@ -101,15 +104,41 @@ namespace
                             listCmpOpe0.pop_back();
                             listCmpOpe1.pop_back();
 
-                            if (pred == ICmpInst::ICMP_SLT)
+                            if (oper0->hasName())
                             {
-                                errs() << "SLT"
-                                       << "\n";
+                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+                                {
+                                    if (pred == ICmpInst::ICMP_SLT)
+                                    {
+                                        errs() << oper0->getName() << " < " << CI->getZExtValue() << "\n";
+                                        std::pair<int, int> intRangePair(0, CI->getZExtValue() - 1);
+                                        std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
+                                    }
+                                    else if (pred == ICmpInst::ICMP_SGT)
+                                    {
+                                        errs() << oper0->getName() << " > " << CI->getZExtValue() << "\n";
+                                        std::pair<int, int> intRangePair(CI->getZExtValue() + 1, 0);
+                                        std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
+                                    }
+                                }
                             }
-                            else if (pred == ICmpInst::ICMP_SLE)
+                            else
                             {
-                                errs() << "SLE"
-                                       << "\n";
+                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+                                {
+                                    if (pred == ICmpInst::ICMP_SLT)
+                                    {
+                                        errs() << oper1->getName() << " > " << CI->getZExtValue() << "\n";
+                                        std::pair<int, int> intRangePair(CI->getZExtValue() + 1, 0);
+                                        std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
+                                    }
+                                    else if (pred == ICmpInst::ICMP_SGT)
+                                    {
+                                        errs() << oper1->getName() << " < " << CI->getZExtValue() << "\n";
+                                        std::pair<int, int> intRangePair(0, CI->getZExtValue() - 1);
+                                        std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
+                                    }
+                                }
                             }
 
                             // Check successor0 if already visited
