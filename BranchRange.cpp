@@ -19,6 +19,8 @@ namespace
         // Run over a single function
         bool runOnFunction(Function &Func) override
         {
+            std::vector<int> intPlaceholder;
+
             std::vector<BasicBlock *> workList;
             std::map<BasicBlock *, std::vector<int>> listRange;
 
@@ -31,6 +33,9 @@ namespace
                 // Get next BasicBlock in workList and remove it
                 BasicBlock *BB = workList.at(0);
                 workList.erase(workList.begin());
+
+                // Mark entry basic block as visited
+                listRange.insert(std::pair<BasicBlock *, std::vector<int>>(BB, intPlaceholder));
 
                 errs() << "BB: " << BB->getName() << "\n";
 
@@ -48,7 +53,38 @@ namespace
                     }
                     else if (auto *brInst = dyn_cast<BranchInst>(I))
                     {
-                        errs() << "Br\n";
+                        if (brInst->isUnconditional())
+                        {
+                            errs() << "Br-Simple\n";
+                            BasicBlock *next = brInst->getSuccessor(0);
+
+                            std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next);
+                            if (it == listRange.end())
+                            {
+                                workList.push_back(next);
+                                errs() << "New BB in workList\n";
+                            }
+                        }
+                        else
+                        {
+                            errs() << "Br-Complex\n";
+                            BasicBlock *next0 = brInst->getSuccessor(0);
+                            BasicBlock *next1 = brInst->getSuccessor(1);
+
+                            std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next0);
+                            if (it == listRange.end())
+                            {
+                                workList.push_back(next0);
+                                errs() << "New BB in workList\n";
+                            }
+
+                            it = listRange.find(next1);
+                            if (it == listRange.end())
+                            {
+                                workList.push_back(next1);
+                                errs() << "New BB in workList\n";
+                            }
+                        }
                     }
                     else if (auto *cmpInst = dyn_cast<CmpInst>(I))
                     {
@@ -58,7 +94,12 @@ namespace
                     {
                         errs() << "Phi\n";
                     }
+
+                    errs() << "\n";
                 }
+
+                // Mark basic block as visited
+                listRange.insert(std::pair<BasicBlock *, std::vector<int>>(BB, intPlaceholder));
             }
 
             return false;
