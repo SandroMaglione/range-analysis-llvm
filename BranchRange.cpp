@@ -53,12 +53,15 @@ namespace
                     }
                     else if (auto *brInst = dyn_cast<BranchInst>(I))
                     {
+                        // If no 'if', 'while', 'for' (only one br basic block)
                         if (brInst->isUnconditional())
                         {
                             errs() << "Br-Simple\n";
-                            BasicBlock *next = brInst->getSuccessor(0);
 
+                            // Check if br basic block has been already visited
+                            BasicBlock *next = brInst->getSuccessor(0);
                             std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next);
+                            // If not already visited, add to workList
                             if (it == listRange.end())
                             {
                                 workList.push_back(next);
@@ -68,17 +71,21 @@ namespace
                         else
                         {
                             errs() << "Br-Complex\n";
-                            BasicBlock *next0 = brInst->getSuccessor(0);
-                            BasicBlock *next1 = brInst->getSuccessor(1);
 
+                            // Check successor0 if already visited
+                            BasicBlock *next0 = brInst->getSuccessor(0);
                             std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next0);
+                            // If not already visited, add to workList
                             if (it == listRange.end())
                             {
                                 workList.push_back(next0);
                                 errs() << "New BB in workList\n";
                             }
 
+                            // Check successor1 if already visited
+                            BasicBlock *next1 = brInst->getSuccessor(1);
                             it = listRange.find(next1);
+                            // If not already visited, add to workList
                             if (it == listRange.end())
                             {
                                 workList.push_back(next1);
