@@ -17,24 +17,21 @@ namespace
         // Run over a single function
         bool runOnFunction(Function &Func) override
         {
-            // Run over all basic blocks in the function
-            for (BasicBlock &BB : Func)
-            {
-                // Print out the name of the basic block if it has one, and then the
-                // number of instructions that it contains
-                errs() << "Basic block (name=" << BB.getName() << ") has "
-                       << BB.size() << " instructions.\n";
+            std::vector<BasicBlock *> workList;
+            std::map<BasicBlock *, std::vector<int>> listRange;
 
-                // Run over all instructions in the basic block
-                for (Instruction &I : BB)
-                {
-                    // The next statement works since operator<<(ostream&,...)
-                    // is overloaded for Instruction&
-                    errs() << I << "\n";
-                }
+            // Entry block to workList
+            workList.push_back(&Func.getEntryBlock());
+
+            // Run over all basic blocks in the function
+            while (workList.size() != 0)
+            {
+                BasicBlock *BB = workList.at(0);
+                workList.erase(workList.begin());
+
+                errs() << BB->getName() << "\n";
             }
 
-            errs().write_escaped(Func.getName()) << '\n';
             return false;
         }
     }; // end of struct HppsBranchRange

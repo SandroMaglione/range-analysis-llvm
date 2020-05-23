@@ -1,35 +1,58 @@
-%retval = alloca i32, align 4
-%a = alloca i32, align 4
-%b = alloca i32, align 4
-%c = alloca i32, align 4
-store i32 0, i32* %retval, align 4
-store i32 0, i32* %a, align 4
-store i32 10, i32* %b, align 4
-%0 = load i32, i32* %a, align 4
-%add = add nsw i32 %0, 3
-store i32 %add, i32* %c, align 4
-ret i32 0
+entry:
+  br label %while.cond
 
-for (all instructions: i) {
-    if (i -> Store: s) {
-        if (s.oper0() -> const) {
-            ADD(oper1, const, const); // Found range value of oper1
-        } else {
-            REF(oper1, oper0); // Dependency of oper2 on oper0
-        }
-    }
-}
+while.cond:                                       ; preds = %if.end, %entry
+  %k.0 = phi i32 [ 0, %entry ], [ %add2, %if.end ]
+  %cmp = icmp slt i32 %k.0, 100
+  br i1 %cmp, label %while.body, label %while.end
 
---ITER0
-%retval = 0
-%a = 0
-%b = 0
-%c = %add
+while.body:                                       ; preds = %while.cond
+  %cmp1 = icmp slt i32 0, %k.0
+  br i1 %cmp1, label %if.then, label %if.end
 
---ITER1
-%add = %0 + 3
-%c = %0 + 3
+if.then:                                          ; preds = %while.body
+  %add = add nsw i32 0, 1
+  %sub = sub nsw i32 %k.0, 1
+  br label %if.end
 
---ITER2
-%0 = %a
-%c = %a + 3
+if.end:                                           ; preds = %if.then, %while.body
+  %add2 = add nsw i32 %k.0, 1
+  br label %while.cond
+
+while.end:                                        ; preds = %while.cond
+  ret i32 %k.0
+
+
+workList = [ entry ] // First BB inside list
+listRange = { entry: [] } // Ranges in input to each BB
+listCmp = []
+
+while (workList.isNotEmpty):
+    BB = workList.first
+    for (inst i: BB):
+        // --- BRANCH --- //
+        if (i is 'br'):
+            if (i is 'simple'): // No if, while, for (only one label)
+                if (label not in listRange): // Don't visited already
+                    workList.add(BB)
+            else if (i is 'complex'):
+                rCmp = listCmp.removeAndGetLast()
+                rangeBr0 = COMBINE(listRange[BB], rCmp.if)
+                rangeBr1 = COMBINE(listRange[BB], rCmp.else)
+
+                // Add to workList
+                if (rangeBr0 != prevRange):
+                    listRange[rCmp.if].updateRanges(rangeBr0)
+                    workList.add(rCmp.if)
+                if (rangeBr1 != prevRange):
+                    listRange[rCmp.else].updateRanges(rangeBr1)
+                    workList.add(rCmp.else)
+        
+        // --- COMPARISON --- //
+        if (i is 'cmp'):
+            listCmp.add(ope0, ope1, comparison) // comparison: '<', '>', '<=', '>='
+
+        // --- PHI --- //
+        if (is is Phi):
+            rangePhi = COMBINE(i.phi0, i.phi1)
+            listRange[BB].updateRanges(rangePhi)
