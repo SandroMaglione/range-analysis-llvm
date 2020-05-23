@@ -21,6 +21,10 @@ namespace
         {
             std::vector<int> intPlaceholder;
 
+            std::vector<ICmpInst::Predicate> listCmp;
+            std::vector<Value *> listCmpOpe0;
+            std::vector<Value *> listCmpOpe1;
+
             std::vector<BasicBlock *> workList;
             std::map<BasicBlock *, std::vector<int>> listRange;
 
@@ -47,6 +51,7 @@ namespace
                     // Get instruction from iterator
                     Instruction *I = &*it;
                     errs() << I << "\n";
+
                     if (auto *operInst = dyn_cast<BinaryOperator>(I))
                     {
                         errs() << "Oper\n";
@@ -96,6 +101,18 @@ namespace
                     else if (auto *cmpInst = dyn_cast<CmpInst>(I))
                     {
                         errs() << "Cmp\n";
+                        ICmpInst::Predicate pred = cmpInst->getPredicate();
+
+                        if (pred == ICmpInst::ICMP_SLT)
+                        {
+                            errs() << "SLT"
+                                   << "\n";
+                        }
+                        else if (pred == ICmpInst::ICMP_SLE)
+                        {
+                            errs() << "SLE"
+                                   << "\n";
+                        }
                     }
                     else if (auto *phiInst = dyn_cast<PHINode>(I))
                     {
