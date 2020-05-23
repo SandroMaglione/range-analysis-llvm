@@ -26,10 +26,21 @@ namespace
             // Run over all basic blocks in the function
             while (workList.size() != 0)
             {
+                // Get next BasicBlock in workList and remove it
                 BasicBlock *BB = workList.at(0);
                 workList.erase(workList.begin());
 
-                errs() << BB->getName() << "\n";
+                errs() << "BB: " << BB->getName() << "\n";
+
+                // Run over all instructions in the basic block
+                for (BasicBlock::InstListType::reverse_iterator it =
+                         BB->getInstList().rbegin();
+                     it != BB->getInstList().rend(); it++)
+                {
+                    // Get instruction from iterator
+                    Instruction *p = &*it;
+                    errs() << p << "\n";
+                }
             }
 
             return false;
