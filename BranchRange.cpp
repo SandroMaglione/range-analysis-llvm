@@ -57,9 +57,10 @@ namespace
                 // Mark entry basic block as visited
                 listRange.insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, emptyVector));
 
-                // Get index of 'listRange' of current basic block
+                // Get vector from 'listRange' of current basic block (to update with new ranges)
                 std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator iterBB = listRange.find(BB);
-                
+                std::vector<std::pair<Value *, std::pair<int, int>>> listRangeBB = iterBB->second;
+
                 errs() << "BB: " << BB->getName() << "\n";
 
                 // Run over all instructions in the basic block
@@ -108,17 +109,50 @@ namespace
                             {
                                 if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
                                 {
+                                    // TODO: We compute the range based on the Predicate (already done).
+                                    // Then we need to see if the Value associated with the range is already present in the
+                                    // 'listRange' for the current basic block.
+                                    // If it is, then see if the range change, if it changes COMBINE it
+                                    // If it is not, then add it as it is
+                                    // If it is, and it does not change, then nothing has to be updated
+
                                     if (pred == ICmpInst::ICMP_SLT)
                                     {
                                         errs() << oper0->getName() << " < " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(0, CI->getZExtValue() - 1);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
+
+                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
+                                        {
+                                            Value *val = listRangeBB.at(i).first;
+                                            if (val == oper0)
+                                            {
+                                                errs() << "ALREADY THERE!\n";
+                                            }
+                                            else
+                                            {
+                                                errs() << "ADD NEW!\n";
+                                            }
+                                        }
                                     }
                                     else if (pred == ICmpInst::ICMP_SGT)
                                     {
                                         errs() << oper0->getName() << " > " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(CI->getZExtValue() + 1, 0);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
+
+                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
+                                        {
+                                            Value *val = listRangeBB.at(i).first;
+                                            if (val == oper0)
+                                            {
+                                                errs() << "ALREADY THERE!\n";
+                                            }
+                                            else
+                                            {
+                                                errs() << "ADD NEW!\n";
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -131,12 +165,38 @@ namespace
                                         errs() << oper1->getName() << " > " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(CI->getZExtValue() + 1, 0);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
+
+                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
+                                        {
+                                            Value *val = listRangeBB.at(i).first;
+                                            if (val == oper0)
+                                            {
+                                                errs() << "ALREADY THERE!\n";
+                                            }
+                                            else
+                                            {
+                                                errs() << "ADD NEW!\n";
+                                            }
+                                        }
                                     }
                                     else if (pred == ICmpInst::ICMP_SGT)
                                     {
                                         errs() << oper1->getName() << " < " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(0, CI->getZExtValue() - 1);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
+
+                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
+                                        {
+                                            Value *val = listRangeBB.at(i).first;
+                                            if (val == oper0)
+                                            {
+                                                errs() << "ALREADY THERE!\n";
+                                            }
+                                            else
+                                            {
+                                                errs() << "ADD NEW!\n";
+                                            }
+                                        }
                                     }
                                 }
                             }
