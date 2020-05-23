@@ -19,14 +19,30 @@ namespace
         // Run over a single function
         bool runOnFunction(Function &Func) override
         {
-            std::vector<int> intPlaceholder;
+            // Create a Null Value reference
+            // Assigned as placeholder when no variable reference available
+            LLVMContext &context = Func.getContext();
+            Value *nullValue = ConstantInt::get(Type::getInt32Ty(context), -1);
 
+            // Create Null range reference
+            std::pair<int, int> emptyIntPair(0, 0);
+            std::pair<Value *, std::pair<int, int>> emptyPair(nullValue, emptyIntPair);
+            std::vector<std::pair<Value *, std::pair<int, int>>> emptyVector;
+
+            // Save cmp instructions to resolve on br instructions
             std::vector<ICmpInst::Predicate> listCmp;
             std::vector<Value *> listCmpOpe0;
             std::vector<Value *> listCmpOpe1;
 
+            // List of basic blocks left to cycle
             std::vector<BasicBlock *> workList;
-            std::map<BasicBlock *, std::vector<int>> listRange;
+
+            // For each basic block, store list of ranges
+            // Contains list of value reference and current min and max range for that value
+            // {
+            //      "BB1": [ { '%k', { 0, 100 } } ]
+            // }
+            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> listRange;
 
             // Entry block to workList
             workList.push_back(&Func.getEntryBlock());
@@ -39,7 +55,7 @@ namespace
                 workList.erase(workList.begin());
 
                 // Mark entry basic block as visited
-                listRange.insert(std::pair<BasicBlock *, std::vector<int>>(BB, intPlaceholder));
+                listRange.insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, emptyVector));
 
                 errs() << "BB: " << BB->getName() << "\n";
 
@@ -65,7 +81,7 @@ namespace
 
                             // Check if br basic block has been already visited
                             BasicBlock *next = brInst->getSuccessor(0);
-                            std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next);
+                            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator it = listRange.find(next);
                             // If not already visited, add to workList
                             if (it == listRange.end())
                             {
@@ -98,7 +114,7 @@ namespace
 
                             // Check successor0 if already visited
                             BasicBlock *next0 = brInst->getSuccessor(0);
-                            std::map<BasicBlock *, std::vector<int>>::iterator it = listRange.find(next0);
+                            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator it = listRange.find(next0);
                             // If not already visited, add to workList
                             if (it == listRange.end())
                             {
@@ -134,7 +150,7 @@ namespace
                 }
 
                 // Mark basic block as visited
-                listRange.insert(std::pair<BasicBlock *, std::vector<int>>(BB, intPlaceholder));
+                listRange.insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, emptyVector));
             }
 
             return false;
