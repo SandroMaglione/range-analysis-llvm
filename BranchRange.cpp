@@ -138,6 +138,9 @@ namespace
                                             {
                                                 // Already in the list but range has changed, COMBINE the ranges
                                                 errs() << "ALREADY THERE!\n";
+                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
+                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
                                                 isAlreadyRef = true;
                                                 break;
                                             }
@@ -168,6 +171,9 @@ namespace
                                             {
                                                 // Already in the list but range has changed, COMBINE the ranges
                                                 errs() << "ALREADY THERE!\n";
+                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
+                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
                                                 isAlreadyRef = true;
                                                 break;
                                             }
@@ -204,6 +210,9 @@ namespace
                                             {
                                                 // Already in the list but range has changed, COMBINE the ranges
                                                 errs() << "ALREADY THERE!\n";
+                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
+                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
                                                 isAlreadyRef = true;
                                                 break;
                                             }
@@ -234,6 +243,9 @@ namespace
                                             {
                                                 // Already in the list but range has changed, COMBINE the ranges
                                                 errs() << "ALREADY THERE!\n";
+                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
+                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
                                                 isAlreadyRef = true;
                                                 break;
                                             }
