@@ -88,14 +88,7 @@ namespace
                             errs() << "Br-Simple\n";
 
                             // Check if br basic block has been already visited
-                            BasicBlock *next = brInst->getSuccessor(0);
-                            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator it = listRange.find(next);
-                            // If not already visited, add to workList
-                            if (it == listRange.end())
-                            {
-                                workList.push_back(next);
-                                errs() << "New BB in workList\n";
-                            }
+                            updateWorkList(brInst->getSuccessor(0), &listRange, &workList);
                         }
                         else
                         {
@@ -166,24 +159,8 @@ namespace
                             }
 
                             // Check successor0 if already visited
-                            BasicBlock *next0 = brInst->getSuccessor(0);
-                            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator it = listRange.find(next0);
-                            // If not already visited, add to workList
-                            if (it == listRange.end())
-                            {
-                                workList.push_back(next0);
-                                errs() << "New BB in workList\n";
-                            }
-
-                            // Check successor1 if already visited
-                            BasicBlock *next1 = brInst->getSuccessor(1);
-                            it = listRange.find(next1);
-                            // If not already visited, add to workList
-                            if (it == listRange.end())
-                            {
-                                workList.push_back(next1);
-                                errs() << "New BB in workList\n";
-                            }
+                            updateWorkList(brInst->getSuccessor(0), &listRange, &workList);
+                            updateWorkList(brInst->getSuccessor(1), &listRange, &workList);
                         }
                     }
                     else if (auto *cmpInst = dyn_cast<CmpInst>(I))
@@ -251,6 +228,19 @@ namespace
             {
                 errs() << "NEW ADDED!\n";
                 listRange->find(BB)->second.push_back(rangePair);
+            }
+        }
+
+        void updateWorkList(BasicBlock *next, std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> *listRange, std::vector<BasicBlock *> *workList)
+        {
+            // Check successor1 if already visited
+            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator it = listRange->find(next);
+
+            // If not already visited, add to workList
+            if (it == listRange->end())
+            {
+                workList->push_back(next);
+                errs() << "New BB in workList\n";
             }
         }
     }; // end of struct HppsBranchRange
