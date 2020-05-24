@@ -125,66 +125,18 @@ namespace
                                         errs() << oper0->getName() << " < " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(infMin, CI->getZExtValue() - 1);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
-                                        bool isAlreadyRef = false;
 
-                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
-                                        {
-                                            Value *val = listRangeBB.at(i).first;
-                                            std::pair<int, int> valRange = listRangeBB.at(i).second;
-
-                                            errs() << val->getName();
-
-                                            if (val == oper0 && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
-                                            {
-                                                // Already in the list but range has changed, COMBINE the ranges
-                                                errs() << "ALREADY THERE!\n";
-                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
-                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
-                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
-                                                isAlreadyRef = true;
-                                                break;
-                                            }
-                                        }
-
-                                        // Not already in the list, add it
-                                        if (!isAlreadyRef || listRangeBB.size() == 0)
-                                        {
-                                            errs() << "NEW ADDED!\n";
-                                            listRange.find(BB)->second.push_back(rangePair);
-                                        }
+                                        // Check for new range and add it in case of updates
+                                        computeRange(BB, oper0, &listRange, listRangeBB, intRangePair, rangePair);
                                     }
                                     else if (pred == ICmpInst::ICMP_SGT)
                                     {
                                         errs() << oper0->getName() << " > " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(CI->getZExtValue() + 1, infMax);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
-                                        bool isAlreadyRef = false;
 
-                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
-                                        {
-                                            Value *val = listRangeBB.at(i).first;
-                                            std::pair<int, int> valRange = listRangeBB.at(i).second;
-
-                                            errs() << val->getName();
-
-                                            if (val == oper0 && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
-                                            {
-                                                // Already in the list but range has changed, COMBINE the ranges
-                                                errs() << "ALREADY THERE!\n";
-                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
-                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
-                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
-                                                isAlreadyRef = true;
-                                                break;
-                                            }
-                                        }
-
-                                        // Not already in the list, add it
-                                        if (!isAlreadyRef || listRangeBB.size() == 0)
-                                        {
-                                            errs() << "NEW ADDED!\n";
-                                            listRange.find(BB)->second.push_back(rangePair);
-                                        }
+                                        // Check for new range and add it in case of updates
+                                        computeRange(BB, oper0, &listRange, listRangeBB, intRangePair, rangePair);
                                     }
                                 }
                             }
@@ -197,66 +149,18 @@ namespace
                                         errs() << oper1->getName() << " > " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(CI->getZExtValue() + 1, infMax);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
-                                        bool isAlreadyRef = false;
 
-                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
-                                        {
-                                            Value *val = listRangeBB.at(i).first;
-                                            std::pair<int, int> valRange = listRangeBB.at(i).second;
-
-                                            errs() << val->getName();
-
-                                            if (val == oper0 && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
-                                            {
-                                                // Already in the list but range has changed, COMBINE the ranges
-                                                errs() << "ALREADY THERE!\n";
-                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
-                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
-                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
-                                                isAlreadyRef = true;
-                                                break;
-                                            }
-                                        }
-
-                                        // Not already in the list, add it
-                                        if (!isAlreadyRef || listRangeBB.size() == 0)
-                                        {
-                                            errs() << "NEW ADDED!\n";
-                                            listRange.find(BB)->second.push_back(rangePair);
-                                        }
+                                        // Check for new range and add it in case of updates
+                                        computeRange(BB, oper1, &listRange, listRangeBB, intRangePair, rangePair);
                                     }
                                     else if (pred == ICmpInst::ICMP_SGT)
                                     {
                                         errs() << oper1->getName() << " < " << CI->getZExtValue() << "\n";
                                         std::pair<int, int> intRangePair(infMin, CI->getZExtValue() - 1);
                                         std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
-                                        bool isAlreadyRef = false;
 
-                                        for (unsigned i = 0; i < listRangeBB.size(); ++i)
-                                        {
-                                            Value *val = listRangeBB.at(i).first;
-                                            std::pair<int, int> valRange = listRangeBB.at(i).second;
-
-                                            errs() << val->getName();
-
-                                            if (val == oper0 && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
-                                            {
-                                                // Already in the list but range has changed, COMBINE the ranges
-                                                errs() << "ALREADY THERE!\n";
-                                                std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
-                                                listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
-                                                listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
-                                                isAlreadyRef = true;
-                                                break;
-                                            }
-                                        }
-
-                                        // Not already in the list, add it
-                                        if (!isAlreadyRef || listRangeBB.size() == 0)
-                                        {
-                                            errs() << "NEW ADDED!\n";
-                                            listRange.find(BB)->second.push_back(rangePair);
-                                        }
+                                        // Check for new range and add it in case of updates
+                                        computeRange(BB, oper1, &listRange, listRangeBB, intRangePair, rangePair);
                                     }
                                 }
                             }
@@ -318,6 +222,37 @@ namespace
 
             return false;
         }
+
+        void computeRange(BasicBlock *BB, Value *oper, std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> *listRange, std::vector<std::pair<Value *, std::pair<int, int>>> listRangeBB, std::pair<int, int> intRangePair, std::pair<Value *, std::pair<int, int>> rangePair)
+        {
+            bool isAlreadyRef = false;
+
+            for (unsigned i = 0; i < listRangeBB.size(); ++i)
+            {
+                Value *val = listRangeBB.at(i).first;
+                std::pair<int, int> valRange = listRangeBB.at(i).second;
+
+                errs() << val->getName();
+
+                if (val == oper && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
+                {
+                    // Already in the list but range has changed, COMBINE the ranges
+                    errs() << "ALREADY THERE!\n";
+                    std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+                    listRange->find(BB)->second.erase(listRange->find(BB)->second.begin() + i);
+                    listRange->find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper, newPairRange));
+                    isAlreadyRef = true;
+                    break;
+                }
+            }
+
+            // Not already in the list, add it
+            if (!isAlreadyRef || listRangeBB.size() == 0)
+            {
+                errs() << "NEW ADDED!\n";
+                listRange->find(BB)->second.push_back(rangePair);
+            }
+        }
     }; // end of struct HppsBranchRange
 } // end of anonymous namespace
 
@@ -330,3 +265,31 @@ static RegisterStandardPasses Y(
     PassManagerBuilder::EP_EarlyAsPossible,
     [](const PassManagerBuilder &Builder,
        legacy::PassManagerBase &PM) { PM.add(new HppsBranchRange()); });
+
+// bool isAlreadyRef = false;
+
+// for (unsigned i = 0; i < listRangeBB.size(); ++i)
+// {
+//     Value *val = listRangeBB.at(i).first;
+//     std::pair<int, int> valRange = listRangeBB.at(i).second;
+
+//     errs() << val->getName();
+
+//     if (val == oper0 && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
+//     {
+//         // Already in the list but range has changed, COMBINE the ranges
+//         errs() << "ALREADY THERE!\n";
+//         std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+//         listRange.find(BB)->second.erase(listRange.find(BB)->second.begin() + i);
+//         listRange.find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper0, newPairRange));
+//         isAlreadyRef = true;
+//         break;
+//     }
+// }
+
+// // Not already in the list, add it
+// if (!isAlreadyRef || listRangeBB.size() == 0)
+// {
+//     errs() << "NEW ADDED!\n";
+//     listRange.find(BB)->second.push_back(rangePair);
+// }
