@@ -61,11 +61,7 @@ namespace
                 // Mark entry basic block as visited
                 listRange.insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, emptyVector));
 
-                // Get vector from 'listRange' of current basic block (to update with new ranges)
-                std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator iterBB = listRange.find(BB);
-                std::vector<std::pair<Value *, std::pair<int, int>>> listRangeBB = iterBB->second;
-
-                errs() << "BB: " << BB->getName() << "\n";
+                errs() << "--- " << BB->getName() << " ---\n";
 
                 // Run over all instructions in the basic block
                 for (BasicBlock::InstListType::iterator it =
@@ -78,7 +74,7 @@ namespace
 
                     if (auto *operInst = dyn_cast<BinaryOperator>(I))
                     {
-                        errs() << "Oper\n";
+                        errs() << "Oper" << operInst << "\n";
                     }
                     else if (auto *brInst = dyn_cast<BranchInst>(I))
                     {
@@ -88,7 +84,7 @@ namespace
                             errs() << "Br-Simple\n";
 
                             // Check if br basic block has been already visited
-                            updateWorkList(brInst->getSuccessor(0), &listRange, &workList);
+                            updateWorkList(false, brInst->getSuccessor(0), &listRange, &workList);
                         }
                         else
                         {
@@ -102,8 +98,9 @@ namespace
                             listCmpOpe0.pop_back();
                             listCmpOpe1.pop_back();
 
-                            // Default new range pair and value
-                            std::pair<int, int> intRangePair(infMin, infMax);
+                            // Default new range pairs and value
+                            std::pair<int, int> rangeSuccessor0(infMin, infMax);
+                            std::pair<int, int> rangeSuccessor1(infMin, infMax);
                             Value *oper = oper0;
 
                             if (oper0->hasName())
@@ -113,22 +110,11 @@ namespace
 
                                 if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
                                 {
-                                    // TODO: We compute the range based on the Predicate (already done).
-                                    // Then we need to see if the Value associated with the range is already present in the
-                                    // 'listRange' for the current basic block.
-                                    // If it is, then see if the range change, if it changes COMBINE it
-                                    // If it is not, then add it as it is
-                                    // If it is, and it does not change, then nothing has to be updated
-
                                     if (pred == ICmpInst::ICMP_SLT)
                                     {
                                         errs() << oper->getName() << " < " << CI->getZExtValue() << "\n";
-                                        intRangePair.second = CI->getZExtValue() - 1;
-                                    }
-                                    else if (pred == ICmpInst::ICMP_SGT)
-                                    {
-                                        errs() << oper->getName() << " > " << CI->getZExtValue() << "\n";
-                                        intRangePair.first = CI->getZExtValue() + 1;
+                                        rangeSuccessor0.second = CI->getZExtValue() - 1;
+                                        rangeSuccessor1.first = CI->getZExtValue();
                                     }
                                 }
                             }
@@ -141,24 +127,26 @@ namespace
                                 {
                                     if (pred == ICmpInst::ICMP_SLT)
                                     {
-                                        errs() << oper->getName() << " > " << CI->getZExtValue() << "\n";
-                                        intRangePair.first = CI->getZExtValue() + 1;
-                                    }
-                                    else if (pred == ICmpInst::ICMP_SGT)
-                                    {
-                                        errs() << oper->getName() << " < " << CI->getZExtValue() << "\n";
-                                        intRangePair.second = CI->getZExtValue() - 1;
+                                        errs() << CI->getZExtValue() << " < " << oper->getName() << "\n";
+                                        rangeSuccessor0.first = CI->getZExtValue() + 1;
+                                        rangeSuccessor1.second = CI->getZExtValue();
                                     }
                                 }
                             }
 
+                            // TODO: First sweep ranges are fine.
+                            // If you now see on ReMarkable notes, when there is the br back to while.cond
+                            // we need to compute %add, since we found a new range for it (so we need to check BinaryOperations).
+                            // We must then add the range to the while.cond BB and add it again to the 
+                            // workList with this new information
+
                             // Check for new range and add it in case of updates
-                            std::pair<Value *, std::pair<int, int>> rangePair(oper, intRangePair);
-                            computeRange(BB, oper, &listRange, listRangeBB, intRangePair, rangePair);
+                            bool isToAdd0 = updateBBRange(brInst->getSuccessor(0), oper, &listRange, rangeSuccessor0);
+                            bool isToAdd1 = updateBBRange(brInst->getSuccessor(1), oper, &listRange, rangeSuccessor1);
 
                             // Check successor0 if already visited
-                            updateWorkList(brInst->getSuccessor(0), &listRange, &workList);
-                            updateWorkList(brInst->getSuccessor(1), &listRange, &workList);
+                            updateWorkList(isToAdd0, brInst->getSuccessor(0), &listRange, &workList);
+                            updateWorkList(isToAdd1, brInst->getSuccessor(1), &listRange, &workList);
                         }
                     }
                     else if (auto *cmpInst = dyn_cast<CmpInst>(I))
@@ -171,7 +159,7 @@ namespace
                     }
                     else if (auto *phiInst = dyn_cast<PHINode>(I))
                     {
-                        errs() << "Phi\n";
+                        errs() << "Phi" << phiInst << "\n";
                     }
 
                     errs() << "\n";
@@ -181,6 +169,8 @@ namespace
                 listRange.insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, emptyVector));
             }
 
+            // --- PRINT FOUND RANGES FOR EACH BASIC BLOCK VISITED --- //
+            errs() << "--- VALUE-RANGES ---\n";
             std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator resIt;
             for (resIt = listRange.begin(); resIt != listRange.end(); ++resIt)
             {
@@ -198,10 +188,34 @@ namespace
             return false;
         }
 
-        void computeRange(BasicBlock *BB, Value *oper, std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> *listRange, std::vector<std::pair<Value *, std::pair<int, int>>> listRangeBB, std::pair<int, int> intRangePair, std::pair<Value *, std::pair<int, int>> rangePair)
+        // Returns true if new range added (i.e. add branch to workList)
+        bool updateBBRange(BasicBlock *BB, Value *oper, std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> *listRange, std::pair<int, int> rangeSuccessor)
         {
-            bool isAlreadyRef = false;
+            // New range pair
+            std::pair<Value *, std::pair<int, int>> rangePair(oper, rangeSuccessor);
 
+            // Get list of reference already saved inside basic block
+            std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator searchBBIter = listRange->find(BB);
+
+            // Basic block not already visited, add it with the new range attached
+            if (searchBBIter == listRange->end())
+            {
+                errs() << "NEW ADDED!\n";
+                std::vector<std::pair<Value *, std::pair<int, int>>> newList{rangePair};
+                listRange->insert(std::pair<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>(BB, newList));
+                return true;
+            }
+
+            // Basic block already visited, and no range yet registered
+            std::vector<std::pair<Value *, std::pair<int, int>>> listRangeBB = listRange->find(BB)->second;
+            if (listRangeBB.size() == 0)
+            {
+                errs() << "NEW ADDED AGAIN!\n";
+                listRange->find(BB)->second.push_back(rangePair);
+                return true;
+            }
+
+            // Check if it is already in the list and range changed, if not, return false (i.e. no update)
             for (unsigned i = 0; i < listRangeBB.size(); ++i)
             {
                 Value *val = listRangeBB.at(i).first;
@@ -209,33 +223,28 @@ namespace
 
                 errs() << val->getName();
 
-                if (val == oper && (valRange.first != intRangePair.first || valRange.second != intRangePair.second))
+                if (val == oper && (valRange.first != rangeSuccessor.first || valRange.second != rangeSuccessor.second))
                 {
                     // Already in the list but range has changed, COMBINE the ranges
                     errs() << "ALREADY THERE!\n";
-                    std::pair<int, int> newPairRange(std::min(valRange.first, intRangePair.first), std::max(valRange.second, intRangePair.second));
+                    std::pair<int, int> newPairRange(std::min(valRange.first, rangeSuccessor.first), std::max(valRange.second, rangeSuccessor.second));
                     listRange->find(BB)->second.erase(listRange->find(BB)->second.begin() + i);
                     listRange->find(BB)->second.push_back(std::pair<Value *, std::pair<int, int>>(oper, newPairRange));
-                    isAlreadyRef = true;
-                    break;
+                    return true;
                 }
             }
 
-            // Not already in the list, add it
-            if (!isAlreadyRef || listRangeBB.size() == 0)
-            {
-                errs() << "NEW ADDED!\n";
-                listRange->find(BB)->second.push_back(rangePair);
-            }
+            return false;
         }
 
-        void updateWorkList(BasicBlock *next, std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> *listRange, std::vector<BasicBlock *> *workList)
+        // If isToAdd is true, then range changed, therefore add to list in any case
+        void updateWorkList(bool isToAdd, BasicBlock *next, std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>> *listRange, std::vector<BasicBlock *> *workList)
         {
             // Check successor1 if already visited
             std::map<BasicBlock *, std::vector<std::pair<Value *, std::pair<int, int>>>>::iterator it = listRange->find(next);
 
             // If not already visited, add to workList
-            if (it == listRange->end())
+            if (isToAdd || it == listRange->end())
             {
                 workList->push_back(next);
                 errs() << "New BB in workList\n";
