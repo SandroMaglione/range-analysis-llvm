@@ -102,8 +102,15 @@ namespace
                             listCmpOpe0.pop_back();
                             listCmpOpe1.pop_back();
 
+                            // Default new range pair and value
+                            std::pair<int, int> intRangePair(infMin, infMax);
+                            Value *oper = oper0;
+
                             if (oper0->hasName())
                             {
+                                // Select reference to operand0
+                                oper = oper0;
+
                                 if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
                                 {
                                     // TODO: We compute the range based on the Predicate (already done).
@@ -115,48 +122,39 @@ namespace
 
                                     if (pred == ICmpInst::ICMP_SLT)
                                     {
-                                        errs() << oper0->getName() << " < " << CI->getZExtValue() << "\n";
-                                        std::pair<int, int> intRangePair(infMin, CI->getZExtValue() - 1);
-                                        std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
-
-                                        // Check for new range and add it in case of updates
-                                        computeRange(BB, oper0, &listRange, listRangeBB, intRangePair, rangePair);
+                                        errs() << oper->getName() << " < " << CI->getZExtValue() << "\n";
+                                        intRangePair.second = CI->getZExtValue() - 1;
                                     }
                                     else if (pred == ICmpInst::ICMP_SGT)
                                     {
-                                        errs() << oper0->getName() << " > " << CI->getZExtValue() << "\n";
-                                        std::pair<int, int> intRangePair(CI->getZExtValue() + 1, infMax);
-                                        std::pair<Value *, std::pair<int, int>> rangePair(oper0, intRangePair);
-
-                                        // Check for new range and add it in case of updates
-                                        computeRange(BB, oper0, &listRange, listRangeBB, intRangePair, rangePair);
+                                        errs() << oper->getName() << " > " << CI->getZExtValue() << "\n";
+                                        intRangePair.first = CI->getZExtValue() + 1;
                                     }
                                 }
                             }
                             else
                             {
+                                // Select reference to operand0
+                                oper = oper1;
+
                                 if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
                                 {
                                     if (pred == ICmpInst::ICMP_SLT)
                                     {
-                                        errs() << oper1->getName() << " > " << CI->getZExtValue() << "\n";
-                                        std::pair<int, int> intRangePair(CI->getZExtValue() + 1, infMax);
-                                        std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
-
-                                        // Check for new range and add it in case of updates
-                                        computeRange(BB, oper1, &listRange, listRangeBB, intRangePair, rangePair);
+                                        errs() << oper->getName() << " > " << CI->getZExtValue() << "\n";
+                                        intRangePair.first = CI->getZExtValue() + 1;
                                     }
                                     else if (pred == ICmpInst::ICMP_SGT)
                                     {
-                                        errs() << oper1->getName() << " < " << CI->getZExtValue() << "\n";
-                                        std::pair<int, int> intRangePair(infMin, CI->getZExtValue() - 1);
-                                        std::pair<Value *, std::pair<int, int>> rangePair(oper1, intRangePair);
-
-                                        // Check for new range and add it in case of updates
-                                        computeRange(BB, oper1, &listRange, listRangeBB, intRangePair, rangePair);
+                                        errs() << oper->getName() << " < " << CI->getZExtValue() << "\n";
+                                        intRangePair.second = CI->getZExtValue() - 1;
                                     }
                                 }
                             }
+
+                            // Check for new range and add it in case of updates
+                            std::pair<Value *, std::pair<int, int>> rangePair(oper, intRangePair);
+                            computeRange(BB, oper, &listRange, listRangeBB, intRangePair, rangePair);
 
                             // Check successor0 if already visited
                             updateWorkList(brInst->getSuccessor(0), &listRange, &workList);
