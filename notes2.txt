@@ -1,0 +1,262 @@
+entry:
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %k.0 = phi i32 [ 0, %entry ], [ %add2, %if.end ]
+  %cmp = icmp slt i32 %k.0, 100
+  br i1 %cmp, label %while.body, label %while.end
+
+while.body:                                       ; preds = %while.cond
+  %cmp1 = icmp slt i32 0, %k.0
+  br i1 %cmp1, label %if.then, label %if.end
+
+if.then:                                          ; preds = %while.body
+  %add = add nsw i32 0, 1
+  %sub = sub nsw i32 %k.0, 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.body
+  %add2 = add nsw i32 %k.0, 1
+  br label %while.cond
+
+while.end:                                        ; preds = %while.cond
+  ret i32 %k.0
+
+
+workList = [ entry ]
+ranges = {}
+
+1) br label %while.cond
+workList = [ while.cond ]
+ranges = {}
+
+2) %k.0 = phi i32 [ 0, %entry ], [ %add2, %if.end ]
+workList = []
+ranges = {
+    'while.cond': {} // add2 not in 'while.cond' ranges, wait to add it
+}
+
+3) %cmp = icmp slt i32 %k.0, 100 (k.0 < 100 then while.body else while.end)
+4) br i1 %cmp, label %while.body, label %while.end
+workList = [ 'while.body', 'while.end' ]
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+}
+
+5) %cmp1 = icmp slt i32 0, %k.0 (k.0 > 0 then if.then else if.end)
+6) br i1 %cmp1, label %if.then, label %if.end
+workList = [ 'while.end', 'if.then', 'if.end' ]
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, _> && <_, 99> = <1, 99>
+    },
+    'if.end': {
+        'k.0': <_, 0> && <_, 99> = <_, 0>
+    },
+}
+
+7) ret i32 %k.0
+workList = [ 'if.then', 'if.end' ]
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>
+    },
+    'if.end': {
+        'k.0': <_, 0>
+    },
+}
+
+8) %add = add nsw i32 0, 1
+workList = [ 'if.end' ]
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>
+    },
+    'if.end': {
+        'k.0': <_, 0>
+    },
+}
+
+9) %sub = sub nsw i32 %k.0, 1
+workList = [ 'if.end' ]
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>,
+        'sub': <1, 99> - 1 = <0, 98>
+    },
+    'if.end': {
+        'k.0': <_, 0>
+    },
+}
+
+10) br label %if.end
+workList = [ 'if.end' ]
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>
+    },
+    'if.end': {
+        'k.0': <_, 0> || <1, 99> = <_, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>
+    },
+}
+
+11) %add2 = add nsw i32 %k.0, 1
+workList = []
+ranges = {
+    'while.cond': {},
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>
+    },
+    'if.end': {
+        'k.0': <_, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 99> + 1 = <_, 100>
+    },
+}
+
+12) br label %while.cond
+workList = [ 'while.cond' ] // Basic block ranges changed, it is to recompute
+ranges = {
+    'while.cond': {
+        'k.0': <_, 99>
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>
+    },
+    'if.end': {
+        'k.0': <_, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+}
+
+13) %k.0 = phi i32 [ 0, %entry ], [ %add2, %if.end ]
+workList = [] 
+ranges = {
+    'while.cond': {
+        'k.0': 0 && add2 = 0 && <_, 100> = <0, 100>
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+    'while.body': {
+        'k.0': <_, 99>
+    },
+    'while.end': {
+        'k.0': <100, _>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>
+    },
+    'if.end': {
+        'k.0': <_, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+}
+
+14) %cmp = icmp slt i32 %k.0, 100
+15) br i1 %cmp, label %while.body, label %while.end
+workList = [ 'while.body', 'while.end' ] 
+ranges = {
+    'while.cond': {
+        'k.0': <0, 100>
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+    'while.body': {
+        'k.0': <_, 99>
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+    'while.end': {
+        'k.0': <100, _>
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+    'if.then': {
+        'k.0': <1, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>
+    },
+    'if.end': {
+        'k.0': <_, 99>,
+        'add': <1, 1>,
+        'sub': <0, 98>,
+        'add2': <_, 100>
+    },
+}

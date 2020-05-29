@@ -1,0 +1,246 @@
+entry:
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %k.0 = phi i32 [ 0, %entry ], [ %add, %while.body ]
+  %cmp = icmp slt i32 %k.0, 100
+  br i1 %cmp, label %while.body, label %while.end
+
+while.body:                                       ; preds = %while.cond
+  %add = add nsw i32 %k.0, 1
+  br label %while.cond
+
+while.end:                                        ; preds = %while.cond
+  ret i32 %k.0
+
+workList = [ entry ]
+range = {
+    entry: {}
+}
+
+NOTE: Remove from workList when first visiting the basic block
+
+1) br label %while.cond
+Found 'while.cond', which is not in 'range' map (never visited).
+Add 'while.cond' in workList and in the 'range' map.
+
+workList = [ while.cond ]
+range = {
+    entry: {}
+    while.cond: {}
+}
+
+2) %k.0 = phi i32 [ 0, %entry ], [ %add, %while.body ]
+%k.0 depends on 0 (constant) and %add. Does 'while.cond' know about %add range?
+No, therefore do nothing for this time
+
+workList = []
+range = {
+    entry: {}
+    while.cond: {}
+}
+
+3) %cmp = icmp slt i32 %k.0, 100 (%k.0 < 100 then while.body else while.end)
+4) br i1 %cmp, label %while.body, label %while.end
+Found 'while.body' and 'while.end'.
+- 'while.body' when %k.0 < 100. Does 'while.cond' know about %k.0 range?
+    No, therefore <_, 99>
+- 'while.end' when %k.0 >= 100, as above, therefore <100, _>
+
+workList = [ while.body, while.end ]
+range = {
+    entry: {}
+    while.cond: {}
+    while.body: {
+        %k.0: <_, 99>
+    }
+    while.end: {
+        %k.0: <100, _>
+    }
+}
+
+5) %add = add nsw i32 %k.0, 1
+%k.0 is <_, 99>
+_ + 1 = _
+99 + 1 = 100
+%add = <_, 100>
+
+workList = [ while.end ]
+range = {
+    entry: {}
+    while.cond: {}
+    while.body: {
+        %k.0: <_, 99>,
+        %add: <_, 99> + 1 = <_, 100>
+    }
+    while.end: {
+        %k.0: <100, _>
+    }
+}
+
+6) br label %while.cond
+Found 'while.cond'.
+Already visited? Yes
+Range stay same? No, add them and insert in workList
+
+workList = [ while.end, while.cond ]
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <_, 99>,
+        %add: <_, 100>
+    }
+    while.body: {
+        %k.0: <_, 99>,
+        %add: <_, 100>
+    }
+    while.end: {
+        %k.0: <100, _>
+    }
+}
+
+7) ret i32 %k.0
+workList = [ while.cond ]
+
+8) %k.0 = phi i32 [ 0, %entry ], [ %add, %while.body ]
+0 from 'entry' | %add from 'while.body'
+Do we know about %add? Yes -> <_, 100>
+min(0, _) = 0 (we did not have info on the lower limit, but now we do)
+max(0, 100) = 100
+
+workList = []
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <_, 99> || <0, 100> = <0, 100>
+        %add: <_, 100>
+    }
+    while.body: {
+        %k.0: <_, 99>,
+        %add: <_, 100>
+    }
+    while.end: {
+        %k.0: <100, _>
+    }
+}
+
+9) %cmp = icmp slt i32 %k.0, 100
+10) br i1 %cmp, label %while.body, label %while.end
+Found 'while.body' and 'while.end'.
+Did we visited them? Yes
+Ranges are the same? No
+- while.body (%k.0 < 100 i.e. <0, 99>)
+    min(_, 0) = 0, max(99, 99) = 99 -> <0, 99> %k.0
+    min(_, _) = _, max(100, 100) = 100 -> <_, 100> %add (same)
+- while.end (%k.0 >= 100 i.e. <100, 100>)
+    min(100, 100) = 100, max(_, 100) = 100 -> <100, 100> %k.0
+
+workList = [ while.body, while.end ]
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <0, 100>
+        %add: <_, 100>
+    }
+    while.body: {
+        %k.0: <0, 99> // Inside <0, 100> and <= 99, then <0, 99>
+        %add: <_, 100> // Same!
+    }
+    while.end: {
+        %k.0: <100, 100> // Inside <0, 100> and > 99, then 100 const
+        %add: <_, 100>
+    }
+}
+
+11) %add = add nsw i32 %k.0, 1
+%k.0 is <0, 99>
+0 + 1 = 1
+99 + 1 = 100
+%add = <1, 100>
+
+workList = [ while.end ]
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <0, 100>
+        %add: <_, 100>
+    }
+    while.body: {
+        %k.0: <0, 99>
+        %add: <1, 100> // Lower limit now defined
+    }
+    while.end: {
+        %k.0: <100, 100>
+    }
+}
+
+12) br label %while.cond
+Found 'while.cond'.
+Visited? Yes
+Same ranges? No
+min(0, 0) = 0, max(99, 100) = 100 -> <0, 100> %k.0
+min(_, 1) = 1, max(100, 100) = 100 -> <1, 100> %add
+
+workList = [ while.end, while.cond ]
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <0, 100> && <0, 99> = <0, 100>
+        %add: <_, 100> && <1, 100> = <1, 100>
+    }
+    while.body: {
+        %k.0: <0, 99>
+        %add: <1, 100>
+    }
+    while.end: {
+        %k.0: <100, 100>
+    }
+}
+
+13) ret i32 %k.0
+workList = [ while.cond ]
+
+14) %k.0 = phi i32 [ 0, %entry ], [ %add, %while.body ]
+0 from 'entry' | %add from 'while.body'
+Do we know about %add? Yes -> <1, 100>
+min(0, 1) = 0, max(100, 100) = 100 -> <0, 100> %k.0 (same)
+
+workList = []
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <0, 100>
+        %add: <1, 100>
+    }
+    while.body: {
+        %k.0: <0, 99>
+        %add: <1, 100>
+    }
+    while.end: {
+        %k.0: <100, 100>
+    }
+}
+
+15) %cmp = icmp slt i32 %k.0, 100
+16) br i1 %cmp, label %while.body, label %while.end
+Found 'while.body' and 'while.end'.
+Visited? Yes
+Same ranges? Yes
+- 'while.body': %k.0 < 100 -> <0, 99> (same)
+- 'while.end': %k.0 >= 100 -> <100, 100> (same)
+
+workList = []
+range = {
+    entry: {}
+    while.cond: {
+        %k.0: <0, 100>
+        %add: <1, 100>
+    }
+    while.body: {
+        %k.0: <0, 99>
+        %add: <1, 100>
+    }
+    while.end: {
+        %k.0: <100, 100>
+    }
+}
