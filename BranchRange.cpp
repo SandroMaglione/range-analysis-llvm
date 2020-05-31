@@ -146,8 +146,16 @@ namespace
                         }
 
                         std::pair<Value *, std::pair<int, int>> rangePair(operInst, rangeRef);
-                        errs() << "NEW REFERENCE VALUE: " << operInst->getName() << " into " << BB->getName() << "\n";
-                        listRange.find(BB)->second.insert(rangePair);
+                        errs() << "NEW REFERENCE VALUE: " << operInst->getName() << " (" << rangeRef.first << ", " << rangeRef.second << ") into " << BB->getName() << "\n";
+                        if (hasValueReference(BB, operInst, &listRange))
+                        {
+                            listRange.find(BB)->second.find(operInst)->second.first = rangeRef.first;
+                            listRange.find(BB)->second.find(operInst)->second.second = rangeRef.second;
+                        }
+                        else
+                        {
+                            listRange.find(BB)->second.insert(rangePair);
+                        }
                     }
                     else if (auto *brInst = dyn_cast<BranchInst>(I))
                     {
@@ -156,14 +164,7 @@ namespace
                         {
                             errs() << "@Br-Simple\n";
                             BasicBlock *succ = brInst->getSuccessor(0);
-                            bool isVisited = isAlreadyVisited(succ, &listRange);
-
-                            if (!isVisited)
-                            {
-                                listRange.insert(std::pair<BasicBlock *, std::map<Value *, std::pair<int, int>>>(succ, emptyMap));
-                            }
-
-                            applySimpleBr(isVisited, succ, BB, &listRange, &workList);
+                            applySimpleBr(true, false, succ, BB, &listRange, &workList, emptyMap, infMin, infMax);
                         }
                         else
                         {
@@ -213,22 +214,27 @@ namespace
                                 }
                             }
 
+                            if (hasValueReference(BB, oper, &listRange))
+                            {
+                                std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, oper, &listRange);
+                                rangeSuccessor0.first = std::max(rangeSuccessor0.first, valRef->second.first);
+                                rangeSuccessor0.second = std::min(rangeSuccessor0.second, valRef->second.second);
+                                rangeSuccessor1.first = std::max(rangeSuccessor1.first, valRef->second.first);
+                                rangeSuccessor1.second = std::min(rangeSuccessor1.second, valRef->second.second);
+                            }
+
                             // Check for new range and add it in case of updates
                             BasicBlock *succ0 = brInst->getSuccessor(0);
                             BasicBlock *succ1 = brInst->getSuccessor(1);
+                            errs() << "Successor0: (" << rangeSuccessor0.first << ", " << rangeSuccessor0.second << ")\n";
+                            errs() << "Successor1: (" << rangeSuccessor1.first << ", " << rangeSuccessor1.second << ")\n";
 
-                            bool isUpdated0 = applyComplexBr(succ0, oper, &listRange, rangeSuccessor0);
-                            bool isUpdated1 = applyComplexBr(succ1, oper, &listRange, rangeSuccessor1);
+                            bool isUpdated0 = applyComplexBr(succ0, oper, &listRange, rangeSuccessor0, infMin, infMax);
+                            bool isUpdated1 = applyComplexBr(succ1, oper, &listRange, rangeSuccessor1, infMin, infMax);
 
                             // Check successor0 if already visited
-                            if (isUpdated0)
-                            {
-                                addToWorklist(succ0, &workList);
-                            }
-                            if (isUpdated1)
-                            {
-                                addToWorklist(succ1, &workList);
-                            }
+                            applySimpleBr(false, isUpdated0, succ0, BB, &listRange, &workList, emptyMap, infMin, infMax);
+                            applySimpleBr(false, isUpdated1, succ1, BB, &listRange, &workList, emptyMap, infMin, infMax);
                         }
                     }
                     else if (auto *cmpInst = dyn_cast<CmpInst>(I))
@@ -275,10 +281,12 @@ namespace
                         // Operator1 is known reference
                         else if (!operand1->hasName() && operand0->hasName() && hasValueReference(BB, operand0, &listRange))
                         {
+                            errs() << "OPER0 IS HERE\n";
                         }
                         // Both integers
                         else if (!operand0->hasName() && !operand1->hasName())
                         {
+                            errs() << "TWO INTEGERS\n";
                         }
                         else
                         {
@@ -308,7 +316,9 @@ namespace
                 while (!listBB.empty())
                 {
                     std::map<Value *, std::pair<int, int>>::iterator pairBB = listBB.begin();
-                    errs() << "   " << pairBB->first->getName() << "(" << pairBB->second.first << ", " << pairBB->second.second << ")\n";
+                    int intRange = std::abs(pairBB->second.first - pairBB->second.second) + 1;
+                    int numOfBit = std::ceil(intRange <= 2 ? 1 : std::log2(intRange));
+                    errs() << "   " << pairBB->first->getName() << "(" << pairBB->second.first << ", " << pairBB->second.second << ") = " << intRange << " is " << numOfBit << "bits\n";
                     listBB.erase(listBB.begin());
                 }
                 errs() << "\n";
@@ -318,20 +328,30 @@ namespace
         }
 
         // If basic block not already visited and not already inside workList, insert it in workList
-        void applySimpleBr(bool wasVisited, BasicBlock *BB, BasicBlock *BBSource, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, std::vector<BasicBlock *> *workList)
+        void applySimpleBr(bool isBrSimple, bool isUpdated, BasicBlock *BB, BasicBlock *BBSource, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, std::vector<BasicBlock *> *workList, std::map<Value *, std::pair<int, int>> emptyMap, int infMin, int infMax)
         {
-            bool isInWL = isInWorkList(BB, workList);
-            bool sameRanges = updateToSameRanges(BBSource, BB, listRange);
-
-            if ((!sameRanges || !wasVisited) && !isInWL)
+            bool isVisited = isAlreadyVisited(BB, listRange);
+            if (!isVisited)
             {
-                errs() << "ADDED TO WORKLIST " << BB->getName() << " (sameRanges=" << sameRanges << ", wasVisited=" << wasVisited << ")\n";
+                listRange->insert(std::pair<BasicBlock *, std::map<Value *, std::pair<int, int>>>(BB, emptyMap));
+            }
+
+            bool isInWL = isInWorkList(BB, workList);
+            bool sameRanges = true;
+            if (isBrSimple)
+            {
+                sameRanges = updateToSameRanges(isBrSimple, BBSource, BB, listRange, infMin, infMax);
+            }
+
+            if ((!sameRanges || !isVisited || isUpdated) && !isInWL)
+            {
+                errs() << "ADDED TO WORKLIST " << BB->getName() << " (sameRanges=" << sameRanges << ", wasVisited=" << isVisited << ", isUpdated=" << isUpdated << ")\n";
                 workList->push_back(BB);
             }
         }
 
         // Returns true if new range added (i.e. add branch to workList)
-        bool applyComplexBr(BasicBlock *BB, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, std::pair<int, int> rangeSuccessor)
+        bool applyComplexBr(BasicBlock *BB, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, std::pair<int, int> rangeSuccessor, int infMin, int infMax)
         {
             // New range pair
             std::pair<Value *, std::pair<int, int>> rangePair(operand, rangeSuccessor);
@@ -360,14 +380,14 @@ namespace
             Value *val = valueRef->first;
             std::pair<int, int> valRange = valueRef->second;
 
-            errs() << val->getName();
+            errs() << "CHECK RANGE of " << val->getName() << ": (" << valRange.first << ", " << valRange.second << ") to (" << rangeSuccessor.first << ", " << rangeSuccessor.second << ")\n";
 
             // --- CASE 3: Value range changed --- //
             if (valRange.first != rangeSuccessor.first || valRange.second != rangeSuccessor.second)
             {
                 // Already in the list but range has changed, COMBINE the ranges
                 errs() << "RANGE CHANGED: " << operand->getName() << " from " << BB->getName() << "\n";
-                std::pair<int, int> newPairRange = combine(valRange, rangeSuccessor);
+                std::pair<int, int> newPairRange = phiCombine(valRange, rangeSuccessor, infMin, infMax);
                 listRange->find(BB)->second.find(operand)->second = newPairRange;
                 return true;
             }
@@ -377,21 +397,31 @@ namespace
         }
 
         // Check if two basic block have the same ranges (and combine them if not)
-        bool updateToSameRanges(BasicBlock *BBSource, BasicBlock *BBBr, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
+        bool updateToSameRanges(bool isBrSimple, BasicBlock *BBSource, BasicBlock *BBBr, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, int infMin, int infMax)
         {
             bool hasSame = true;
-
+            errs() << BBSource->getName() << " to " << BBBr->getName() << "\n";
             std::map<Value *, std::pair<int, int>> valuesSource = listRange->find(BBSource)->second;
             std::map<Value *, std::pair<int, int>>::iterator resIt;
             for (resIt = valuesSource.begin(); resIt != valuesSource.end(); ++resIt)
             {
+                errs() << "\nWhat about " << resIt->first->getName() << "?\n";
                 if (hasValueReference(BBBr, resIt->first, listRange))
                 {
                     std::map<Value *, std::pair<int, int>>::iterator valuesBr = getValueReference(BBBr, resIt->first, listRange);
+                    errs() << "DIFFERENT? -> " << resIt->first->getName() << ": " << BBSource->getName() << " (" << resIt->second.first << ", " << resIt->second.second << ") - " << BBBr->getName() << " (" << valuesBr->second.first << ", " << valuesBr->second.second << ")\n";
                     if (resIt->second.first != valuesBr->second.first || resIt->second.second != valuesBr->second.second)
                     {
                         // Has value but range is different
                         // TODO: Combine values from both sources
+                        std::pair<int, int> phiPair = brCombine(resIt->second, valuesBr->second, infMin, infMax);
+                        if (isBrSimple)
+                        {
+                            phiPair = phiCombine(resIt->second, valuesBr->second, infMin, infMax);
+                        }
+                        errs() << "YES! -> (" << phiPair.first << ", " << phiPair.second << ")\n";
+                        listRange->find(BBBr)->second.find(resIt->first)->second.first = phiPair.first;
+                        listRange->find(BBBr)->second.find(resIt->first)->second.second = phiPair.second;
                         hasSame = false;
                     }
                 }
@@ -400,26 +430,12 @@ namespace
                     // Does not have the value
                     std::pair<Value *, std::pair<int, int>> rangePair(resIt->first, resIt->second);
                     listRange->find(BBBr)->second.insert(rangePair);
+                    errs() << "NOW ADDED: " << resIt->first->getName() << "\n";
                     hasSame = false;
                 }
             }
 
             return hasSame;
-        }
-
-        // Insert BasicBlock in workList if not already present
-        void addToWorklist(BasicBlock *BB, std::vector<BasicBlock *> *workList)
-        {
-            if (!isInWorkList(BB, workList))
-            {
-                workList->push_back(BB);
-            }
-        }
-
-        // Combine two ranges to compute their new value
-        std::pair<int, int> combine(std::pair<int, int> range0, std::pair<int, int> range1)
-        {
-            return std::pair<int, int>(std::min(range0.first, range1.first), std::max(range0.second, range1.second));
         }
 
         // Combine two ranges to compute their new value
@@ -430,36 +446,12 @@ namespace
                 range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::max(range0.second, range1.second));
         }
 
-        // Given vector of references and new range, checks if value is already present and range values are changed
-        bool isVariableNotPresentOrChanged(Value *oper, std::vector<std::pair<Value *, std::pair<int, int>>> *listRangeBB, std::pair<int, int> rangeSuccessor)
+        // Combine two ranges to compute their new value
+        std::pair<int, int> brCombine(std::pair<int, int> range0, std::pair<int, int> range1, int infMin, int infMax)
         {
-            return true;
-            // if (listRangeBB->size() == 0)
-            // {
-            //     // Not present
-            //     return true;
-            // }
-
-            // // Check if it is already in the list and range changed, if not, return false (i.e. no update)
-            // for (unsigned i = 0; i < listRangeBB->size(); ++i)
-            // {
-            //     Value *val = listRangeBB->at(i).first;
-            //     std::pair<int, int> valRange = listRangeBB->at(i).second;
-
-            //     if (val == oper && (valRange.first != rangeSuccessor.first || valRange.second != rangeSuccessor.second))
-            //     {
-            //         // Already present and changed
-            //         return true;
-            //     }
-            //     if (val == oper && valRange.first == rangeSuccessor.first && valRange.second == rangeSuccessor.second)
-            //     {
-            //         // Already present and not changed
-            //         return false;
-            //     }
-            // }
-
-            // // Not present
-            // return true;
+            return std::pair<int, int>(
+                range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::max(range0.first, range1.first),
+                range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::min(range0.second, range1.second));
         }
 
         // Check if given BasicBlock is already visited in listRange
@@ -473,11 +465,13 @@ namespace
         {
             if (hasValueReference(BB, operand, listRange))
             {
+                // Update reference
                 listRange->find(BB)->second.find(operand)->second.first = pairRange.first;
                 listRange->find(BB)->second.find(operand)->second.second = pairRange.second;
             }
             else
             {
+                // Insert reference
                 std::pair<Value *, std::pair<int, int>> newPairRange(operand, pairRange);
                 listRange->find(BB)->second.insert(newPairRange);
             }
@@ -486,6 +480,7 @@ namespace
         // Check if given BasicBlock is already visited in listRange
         bool hasValueReference(BasicBlock *next, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
         {
+            // No reference if never visited
             if (!isAlreadyVisited(next, listRange))
             {
                 return false;
@@ -494,7 +489,7 @@ namespace
             return listRange->find(next)->second.find(operand) != listRange->find(next)->second.end();
         }
 
-        // Get value and its range from listRange
+        // Get value and its range from listRange (assumed to exist, check before with hasValueReference)
         std::map<Value *, std::pair<int, int>>::iterator getValueReference(BasicBlock *next, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
         {
             return listRange->find(next)->second.find(operand);
@@ -504,6 +499,15 @@ namespace
         bool isInWorkList(BasicBlock *next, std::vector<BasicBlock *> *workList)
         {
             return std::find(workList->begin(), workList->end(), next) != workList->end();
+        }
+
+        // Insert BasicBlock in workList if not already present
+        void addToWorklist(BasicBlock *BB, std::vector<BasicBlock *> *workList)
+        {
+            if (!isInWorkList(BB, workList))
+            {
+                workList->push_back(BB);
+            }
         }
     }; // end of struct HppsBranchRange
 } // end of anonymous namespace

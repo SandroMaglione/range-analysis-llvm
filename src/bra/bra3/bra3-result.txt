@@ -1,0 +1,104 @@
+--- entry ---
+@Br-Simple
+entry to while.cond
+ADDED TO WORKLIST while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+
+--- while.cond ---
+@Phi: k.0 (, add)
+ONE REFERENCE MISSING
+
+@Cmp
+
+@Br-Complex
+k.0 < 100
+Successor0: (-2147483648, 99)
+Successor1: (100, 2147483647)
+NEW VISITED ADDED: while.body
+NEW VISITED ADDED: while.end
+ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
+ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
+
+
+--- while.body ---
+@Operation
+NEW REFERENCE VALUE: add (-2147483648, 100) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+What about k.0?
+NOW ADDED: k.0
+
+What about add?
+NOW ADDED: add
+ADDED TO WORKLIST while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
+
+
+--- while.end ---
+
+
+--- while.cond ---
+@Phi: k.0 (, add)
+New Range: (0, 100)
+
+@Cmp
+
+@Br-Complex
+k.0 < 100
+Successor0: (0, 99)
+Successor1: (100, 100)
+CHECK RANGE of k.0: (-2147483648, 99) to (0, 99)
+RANGE CHANGED: k.0 from while.body
+CHECK RANGE of k.0: (100, 2147483647) to (100, 100)
+RANGE CHANGED: k.0 from while.end
+ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
+ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
+
+
+--- while.body ---
+@Operation
+NEW REFERENCE VALUE: add (1, 100) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+What about k.0?
+DIFFERENT? -> k.0: while.body (0, 99) - while.cond (0, 100)
+YES! -> (0, 100)
+
+What about add?
+DIFFERENT? -> add: while.body (1, 100) - while.cond (-2147483648, 100)
+YES! -> (1, 100)
+ADDED TO WORKLIST while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
+
+
+--- while.end ---
+
+
+--- while.cond ---
+@Phi: k.0 (, add)
+New Range: (0, 100)
+
+@Cmp
+
+@Br-Complex
+k.0 < 100
+Successor0: (0, 99)
+Successor1: (100, 100)
+CHECK RANGE of k.0: (0, 99) to (0, 99)
+CHECK RANGE of k.0: (100, 100) to (100, 100)
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   k.0(0, 100) = 101 is 7bits
+   add(1, 100) = 100 is 7bits
+
+BB: while.body
+   k.0(0, 99) = 100 is 7bits
+   add(1, 100) = 100 is 7bits
+
+BB: while.end
+   k.0(100, 100) = 1 is 1bits

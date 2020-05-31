@@ -129,7 +129,7 @@ range = {
 Found 'while.body' and 'while.end'.
 Did we visited them? Yes
 Ranges are the same? No
-- while.body (%k.0 < 100 i.e. <0, 99>)
+- while.body (%k.0 < 100 (i.e. <0, 99>))
     min(_, 0) = 0, max(99, 99) = 99 -> <0, 99> %k.0
     min(_, _) = _, max(100, 100) = 100 -> <_, 100> %add (same)
 - while.end (%k.0 >= 100 i.e. <100, 100>)
@@ -171,6 +171,7 @@ range = {
     }
     while.end: {
         %k.0: <100, 100>
+        %add: <_, 100>
     }
 }
 
