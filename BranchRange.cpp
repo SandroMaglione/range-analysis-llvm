@@ -244,16 +244,45 @@ namespace
                         Value *operand0 = phiInst->getOperand(0);
                         Value *operand1 = phiInst->getOperand(1);
 
-                        errs() << "@Phi: (" << operand0->getName() << ", " << operand1->getName() << ")\n";
+                        errs() << "@Phi: " << phiInst->getName() << " (" << operand0->getName() << ", " << operand1->getName() << ")\n";
 
-                        // If missing reference to value range in current basic block then skip
-                        if (operand0->hasName() && !hasValueReference(BB, operand0, &listRange))
+                        // Both referenced values
+                        if (operand0->hasName() && operand1->hasName())
                         {
-                            errs() << "MISSING: " << operand1->getName() << "\n";
+                            // Both known references
+                            if (hasValueReference(BB, operand0, &listRange) && hasValueReference(BB, operand1, &listRange))
+                            {
+                                errs() << "MISSING: " << operand0->getName() << "\n";
+                            }
+                            else
+                            {
+                                errs() << "BOTH REFERENCE MISSING\n";
+                            }
                         }
-                        else if (operand1->hasName() && !hasValueReference(BB, operand1, &listRange))
+                        // Operator1 is known reference
+                        else if (!operand0->hasName() && operand1->hasName() && hasValueReference(BB, operand1, &listRange))
                         {
-                            errs() << "MISSING: " << operand1->getName() << "\n";
+                            if (ConstantInt *CI = dyn_cast<ConstantInt>(operand0))
+                            {
+                                int constValue = CI->getZExtValue();
+                                std::pair<int, int> constPair(constValue, constValue);
+                                std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, operand1, &listRange);
+                                std::pair<int, int> phiPair = phiCombine(valRef->second, constPair, infMin, infMax);
+                                updateValueReference(BB, phiInst, phiPair, &listRange);
+                                errs() << "New Range: (" << phiPair.first << ", " << phiPair.second << ")\n";
+                            }
+                        }
+                        // Operator1 is known reference
+                        else if (!operand1->hasName() && operand0->hasName() && hasValueReference(BB, operand0, &listRange))
+                        {
+                        }
+                        // Both integers
+                        else if (!operand0->hasName() && !operand1->hasName())
+                        {
+                        }
+                        else
+                        {
+                            errs() << "ONE REFERENCE MISSING\n";
                         }
 
                         // TODO: Step 8) of the sketched algorithm
@@ -393,6 +422,14 @@ namespace
             return std::pair<int, int>(std::min(range0.first, range1.first), std::max(range0.second, range1.second));
         }
 
+        // Combine two ranges to compute their new value
+        std::pair<int, int> phiCombine(std::pair<int, int> range0, std::pair<int, int> range1, int infMin, int infMax)
+        {
+            return std::pair<int, int>(
+                range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::min(range0.first, range1.first),
+                range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::max(range0.second, range1.second));
+        }
+
         // Given vector of references and new range, checks if value is already present and range values are changed
         bool isVariableNotPresentOrChanged(Value *oper, std::vector<std::pair<Value *, std::pair<int, int>>> *listRangeBB, std::pair<int, int> rangeSuccessor)
         {
@@ -431,6 +468,21 @@ namespace
             return listRange->find(next) != listRange->end();
         }
 
+        // Update or insert new Value/Pair into basic block
+        void updateValueReference(BasicBlock *BB, Value *operand, std::pair<int, int> pairRange, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
+        {
+            if (hasValueReference(BB, operand, listRange))
+            {
+                listRange->find(BB)->second.find(operand)->second.first = pairRange.first;
+                listRange->find(BB)->second.find(operand)->second.second = pairRange.second;
+            }
+            else
+            {
+                std::pair<Value *, std::pair<int, int>> newPairRange(operand, pairRange);
+                listRange->find(BB)->second.insert(newPairRange);
+            }
+        }
+
         // Check if given BasicBlock is already visited in listRange
         bool hasValueReference(BasicBlock *next, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
         {
@@ -441,7 +493,7 @@ namespace
 
             return listRange->find(next)->second.find(operand) != listRange->find(next)->second.end();
         }
-        
+
         // Get value and its range from listRange
         std::map<Value *, std::pair<int, int>>::iterator getValueReference(BasicBlock *next, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
         {
