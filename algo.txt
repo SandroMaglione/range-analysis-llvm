@@ -1,0 +1,56 @@
+range = {}
+workList = [ entry ]
+
+while (workList.isNotEmpty):
+    BB = getAndRemoveFirstElementWorkList();
+
+    for (i: BB.instructions()):
+        if (PHI):
+            if (one reference missing):
+                continue;
+            else if (one operator is reference known and one is constant):
+                newRange = <min, max> // If Inf, then take other value!
+                BB.updateOrInsertReference(newRange);
+        
+        if (CMP):
+            storeCmp();
+        
+        if (BR):
+            if (COMPLEX):
+                getRangePredicateLeftAndRight({
+                    if (BB has operand range already):
+                        newRange = <max, min>
+                });
+
+                if (BB.neverVisited):
+                    BB.addRange(left/right range);
+                else if (BB.missingReference):
+                    BB.addRange(left/right range);
+                else if (BB current and BB destination different):
+                    newRange = <min, max> // If Inf, then take other value!
+                    BBDestination.updateRange(newRange);
+
+                if ((BBDestination.neverVisited || BBDestination.updatedRanges) && BBDestination.notInWorkList):
+                    workList.add(BBDestination);
+            
+            if (SIMPLE):
+                for (compare all reference of source BB to destination BB):
+                    if (destination BB reference missing):
+                        BBDestination.add(BBSource reference);
+                    else:
+                        newRange = <min, max> // If Inf, then take other value!
+                        BBDestination.updateRange(newRange);
+                
+                if ((BBDestination.neverVisited || BBDestination.hasNewRanges) && BBDestination.notInWorkList):
+                    workList.add(BBDestination);
+        
+        if (BINARY_OPERATION):
+            computeRangeFromOperation({
+                currRange = BB.getReferences();
+                if (currRange -> Inf):
+                    currRange = keep Infinite
+                else:
+                    currRange +/- constant
+            });
+
+            updateOrInsertNewReferenceRange();

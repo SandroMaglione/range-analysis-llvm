@@ -83,7 +83,7 @@ namespace
                         {
                             int constValue0 = CI0->getZExtValue();
 
-                            // a = 1 + 1
+                            // a = 1 + 1 (constant)
                             if (ConstantInt *CI1 = dyn_cast<ConstantInt>(oper1))
                             {
                                 int constValue1 = CI1->getZExtValue();
@@ -265,7 +265,7 @@ namespace
                                 errs() << "BOTH REFERENCE MISSING\n";
                             }
                         }
-                        // Operator1 is known reference
+                        // Operator1 is known reference, Operator0 is constant
                         else if (!operand0->hasName() && operand1->hasName() && hasValueReference(BB, operand1, &listRange))
                         {
                             if (ConstantInt *CI = dyn_cast<ConstantInt>(operand0))
@@ -278,7 +278,7 @@ namespace
                                 errs() << "New Range: (" << phiPair.first << ", " << phiPair.second << ")\n";
                             }
                         }
-                        // Operator1 is known reference
+                        // Operator0 is known reference, Operator1 is constant
                         else if (!operand1->hasName() && operand0->hasName() && hasValueReference(BB, operand0, &listRange))
                         {
                             errs() << "OPER0 IS HERE\n";
@@ -292,8 +292,6 @@ namespace
                         {
                             errs() << "ONE REFERENCE MISSING\n";
                         }
-
-                        // TODO: Step 8) of the sketched algorithm
                     }
 
                     errs() << "\n";
@@ -340,7 +338,7 @@ namespace
             bool sameRanges = true;
             if (isBrSimple)
             {
-                sameRanges = updateToSameRanges(isBrSimple, BBSource, BB, listRange, infMin, infMax);
+                sameRanges = updateToSameRanges(BBSource, BB, listRange, infMin, infMax);
             }
 
             if ((!sameRanges || !isVisited || isUpdated) && !isInWL)
@@ -397,7 +395,7 @@ namespace
         }
 
         // Check if two basic block have the same ranges (and combine them if not)
-        bool updateToSameRanges(bool isBrSimple, BasicBlock *BBSource, BasicBlock *BBBr, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, int infMin, int infMax)
+        bool updateToSameRanges(BasicBlock *BBSource, BasicBlock *BBBr, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, int infMin, int infMax)
         {
             bool hasSame = true;
             errs() << BBSource->getName() << " to " << BBBr->getName() << "\n";
@@ -414,11 +412,7 @@ namespace
                     {
                         // Has value but range is different
                         // TODO: Combine values from both sources
-                        std::pair<int, int> phiPair = brCombine(resIt->second, valuesBr->second, infMin, infMax);
-                        if (isBrSimple)
-                        {
-                            phiPair = phiCombine(resIt->second, valuesBr->second, infMin, infMax);
-                        }
+                        std::pair<int, int> phiPair = phiCombine(resIt->second, valuesBr->second, infMin, infMax);
                         errs() << "YES! -> (" << phiPair.first << ", " << phiPair.second << ")\n";
                         listRange->find(BBBr)->second.find(resIt->first)->second.first = phiPair.first;
                         listRange->find(BBBr)->second.find(resIt->first)->second.second = phiPair.second;
@@ -444,14 +438,6 @@ namespace
             return std::pair<int, int>(
                 range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::min(range0.first, range1.first),
                 range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::max(range0.second, range1.second));
-        }
-
-        // Combine two ranges to compute their new value
-        std::pair<int, int> brCombine(std::pair<int, int> range0, std::pair<int, int> range1, int infMin, int infMax)
-        {
-            return std::pair<int, int>(
-                range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::max(range0.first, range1.first),
-                range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::min(range0.second, range1.second));
         }
 
         // Check if given BasicBlock is already visited in listRange
@@ -499,15 +485,6 @@ namespace
         bool isInWorkList(BasicBlock *next, std::vector<BasicBlock *> *workList)
         {
             return std::find(workList->begin(), workList->end(), next) != workList->end();
-        }
-
-        // Insert BasicBlock in workList if not already present
-        void addToWorklist(BasicBlock *BB, std::vector<BasicBlock *> *workList)
-        {
-            if (!isInWorkList(BB, workList))
-            {
-                workList->push_back(BB);
-            }
         }
     }; // end of struct HppsBranchRange
 } // end of anonymous namespace
