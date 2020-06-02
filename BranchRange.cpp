@@ -77,6 +77,7 @@ namespace
                         // Get operands from binary operation
                         Value *oper0 = operInst->getOperand(0);
                         Value *oper1 = operInst->getOperand(1);
+                        unsigned operCode = operInst->getOpcode();
                         std::pair<int, int> rangeRef(infMin, infMax);
 
                         if (ConstantInt *CI0 = dyn_cast<ConstantInt>(oper0))
@@ -87,7 +88,7 @@ namespace
                             if (ConstantInt *CI1 = dyn_cast<ConstantInt>(oper1))
                             {
                                 int constValue1 = CI1->getZExtValue();
-                                int totConst = constValue0 + constValue1;
+                                int totConst = binaryOperationResult(operCode, constValue0, constValue1);
                                 rangeRef.first = totConst;
                                 rangeRef.second = totConst;
                             }
@@ -97,7 +98,7 @@ namespace
                                 std::map<Value *, std::pair<int, int>>::iterator valueRef = getValueReference(BB, oper1, &listRange);
                                 if (valueRef->second.first != infMin)
                                 {
-                                    rangeRef.first = valueRef->second.first + constValue0;
+                                    rangeRef.first = binaryOperationResult(operCode, constValue0, valueRef->second.first);
                                 }
                                 else
                                 {
@@ -105,7 +106,7 @@ namespace
                                 }
                                 if (valueRef->second.second != infMax)
                                 {
-                                    rangeRef.second = valueRef->second.second + constValue0;
+                                    rangeRef.second = binaryOperationResult(operCode, constValue0, valueRef->second.second);
                                 }
                                 else
                                 {
@@ -123,7 +124,7 @@ namespace
                                 std::map<Value *, std::pair<int, int>>::iterator valueRef = getValueReference(BB, oper0, &listRange);
                                 if (valueRef->second.first != infMin)
                                 {
-                                    rangeRef.first = valueRef->second.first + constValue1;
+                                    rangeRef.first = binaryOperationResult(operCode, valueRef->second.first, constValue1);
                                 }
                                 else
                                 {
@@ -131,7 +132,7 @@ namespace
                                 }
                                 if (valueRef->second.second != infMax)
                                 {
-                                    rangeRef.second = valueRef->second.second + constValue1;
+                                    rangeRef.second = binaryOperationResult(operCode, valueRef->second.second, constValue1);
                                 }
                                 else
                                 {
@@ -190,12 +191,8 @@ namespace
 
                                 if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
                                 {
-                                    if (pred == ICmpInst::ICMP_SLT)
-                                    {
-                                        errs() << oper->getName() << " < " << CI->getZExtValue() << "\n";
-                                        rangeSuccessor0.second = CI->getZExtValue() - 1;
-                                        rangeSuccessor1.first = CI->getZExtValue();
-                                    }
+                                    // Change range of successors based on reference, constant value, and predicate
+                                    computeCmpRange(true, pred, oper, CI->getZExtValue(), &rangeSuccessor0, &rangeSuccessor1);
                                 }
                             }
                             else
@@ -205,12 +202,8 @@ namespace
 
                                 if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
                                 {
-                                    if (pred == ICmpInst::ICMP_SLT)
-                                    {
-                                        errs() << CI->getZExtValue() << " < " << oper->getName() << "\n";
-                                        rangeSuccessor0.first = CI->getZExtValue() + 1;
-                                        rangeSuccessor1.second = CI->getZExtValue();
-                                    }
+                                    // Change range of successors based on reference, constant value, and predicate
+                                    computeCmpRange(false, pred, oper, CI->getZExtValue(), &rangeSuccessor0, &rangeSuccessor1);
                                 }
                             }
 
@@ -438,6 +431,96 @@ namespace
             return std::pair<int, int>(
                 range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::min(range0.first, range1.first),
                 range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::max(range0.second, range1.second));
+        }
+
+        // Compute binary operation (+ or -) result
+        int binaryOperationResult(unsigned binOper, int value1, int value2)
+        {
+            if (binOper == Instruction::Add)
+            {
+                return value1 + value2;
+            }
+            else if (binOper == Instruction::Sub)
+            {
+                return value1 - value2;
+            }
+
+            return value1 + value2;
+        }
+
+        // Computes ranges from CMP instruction (<, >, <=, >=)
+        void computeCmpRange(bool isRefOper0, ICmpInst::Predicate pred, Value *oper, int cmpValue, std::pair<int, int> *rangeSuccessor0, std::pair<int, int> *rangeSuccessor1)
+        {
+            if (pred == ICmpInst::ICMP_SLT)
+            {
+                // a < 1
+                if (isRefOper0)
+                {
+                    errs() << oper->getName() << " < " << cmpValue << "\n";
+                    rangeSuccessor0->second = cmpValue - 1;
+                    rangeSuccessor1->first = cmpValue;
+                }
+                // 1 < a
+                else
+                {
+                    errs() << cmpValue << " < " << oper->getName() << "\n";
+                    rangeSuccessor0->first = cmpValue + 1;
+                    rangeSuccessor1->second = cmpValue;
+                }
+            }
+            else if (pred == ICmpInst::ICMP_SLE)
+            {
+                // a <= 1
+                if (isRefOper0)
+                {
+                    errs() << oper->getName() << " <= " << cmpValue << "\n";
+                    rangeSuccessor0->second = cmpValue;
+                    rangeSuccessor1->first = cmpValue + 1;
+                }
+                // 1 <= a
+                else
+                {
+                    errs() << cmpValue << " <= " << oper->getName() << "\n";
+                    rangeSuccessor0->first = cmpValue;
+                    rangeSuccessor1->second = cmpValue - 1;
+                }
+            }
+            else if (pred == ICmpInst::ICMP_SGT)
+            {
+                // TODO
+                // // a > 1
+                // if (isRefOper0)
+                // {
+                //     errs() << oper->getName() << " > " << cmpValue << "\n";
+                //     rangeSuccessor0->second = cmpValue - 1;
+                //     rangeSuccessor1->first = cmpValue;
+                // }
+                // // 1 > a
+                // else
+                // {
+                //     errs() << cmpValue << " > " << oper->getName() << "\n";
+                //     rangeSuccessor0->first = cmpValue + 1;
+                //     rangeSuccessor1->second = cmpValue;
+                // }
+            }
+            else if (pred == ICmpInst::ICMP_SGE)
+            {
+                // TODO
+                // // a >= 1
+                // if (isRefOper0)
+                // {
+                //     errs() << oper->getName() << " >= " << cmpValue << "\n";
+                //     rangeSuccessor0->second = cmpValue - 1;
+                //     rangeSuccessor1->first = cmpValue;
+                // }
+                // // 1 >= a
+                // else
+                // {
+                //     errs() << cmpValue << " >= " << oper->getName() << "\n";
+                //     rangeSuccessor0->first = cmpValue + 1;
+                //     rangeSuccessor1->second = cmpValue;
+                // }
+            }
         }
 
         // Check if given BasicBlock is already visited in listRange
