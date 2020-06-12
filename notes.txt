@@ -56,3 +56,7 @@ while (workList.isNotEmpty):
         if (is is Phi):
             rangePhi = COMBINE(i.phi0, i.phi1)
             listRange[BB].updateRanges(rangePhi)
+
+- Scanf / Pointers / Function call
+- Problem --> Solution (+ installation + example) in repo
+- Additions / Assumptions

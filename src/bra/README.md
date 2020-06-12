@@ -4,6 +4,7 @@
 - Run command `./clang -c -O0 -emit-llvm ../../../code/bra.c -o bra.bc -Xclang -disable-O0-optnone` to generate `bra.bc` (bitecode)
 - Run command `./llvm-dis bra.bc -o=bra.ll` to generate `bra.ll` (IR)
 - Run command `./opt -mem2reg -S bra.ll -o bra-opt.ll` to generate SSA form using `-mem2reg` (Remove instructions and add PHI nodes1)
+- **Extra LLVM optimization passes: `./opt -mem2reg -constprop -dce -indvars -instcombine -simplifycfg -S bra2.ll -o bra2-super.ll`**
 
 ## Supported instructions
 - `a = b + 1`
