@@ -1,28 +1,40 @@
 --- entry ---
+___No visited
+
 @Br-Simple
 entry to while.cond
 ADDED TO WORKLIST while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
 
 
 --- while.cond ---
+___No references
+
 @Phi: k.0 (, add)
 ONE REFERENCE MISSING
 
 @Cmp
 
 @Br-Complex
-k.0 < 100
-Successor0: (-2147483648, 99)
-Successor1: (100, 2147483647)
-NEW VISITED ADDED: while.body
+k.0 == 100
+while.end: (100, 100)
+while.body: (-2147483648, 2147483647)
 NEW VISITED ADDED: while.end
-ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
+NEW VISITED ADDED: while.body
 ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
+ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
+
+
+--- while.end ---
+___k.0(100, 100)
+
 
 
 --- while.body ---
+___k.0(-2147483648, 2147483647)
+
 @Operation
-NEW REFERENCE VALUE: add (-2147483648, 100) into while.body
+BINARY OPERATION: original -> k.0 (-2147483648, 2147483647) into while.body
+NEW REFERENCE VALUE: add (-2147483648, 2147483647) into while.body
 
 @Br-Simple
 while.body to while.cond
@@ -35,70 +47,32 @@ NOW ADDED: add
 ADDED TO WORKLIST while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
 
 
---- while.end ---
-
-
 --- while.cond ---
+___k.0(-2147483648, 2147483647)
+___add(-2147483648, 2147483647)
+
 @Phi: k.0 (, add)
-New Range: (0, 100)
+New Range: (-2147483648, 2147483647)
 
 @Cmp
 
 @Br-Complex
-k.0 < 100
-Successor0: (0, 99)
-Successor1: (100, 100)
-CHECK RANGE of k.0: (-2147483648, 99) to (0, 99)
-RANGE CHANGED: k.0 from while.body
-CHECK RANGE of k.0: (100, 2147483647) to (100, 100)
-RANGE CHANGED: k.0 from while.end
-ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
-ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
-
-
---- while.body ---
-@Operation
-NEW REFERENCE VALUE: add (1, 100) into while.body
-
-@Br-Simple
-while.body to while.cond
-
-What about k.0?
-DIFFERENT? -> k.0: while.body (0, 99) - while.cond (0, 100)
-YES! -> (0, 100)
-
-What about add?
-DIFFERENT? -> add: while.body (1, 100) - while.cond (-2147483648, 100)
-YES! -> (1, 100)
-ADDED TO WORKLIST while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
-
-
---- while.end ---
-
-
---- while.cond ---
-@Phi: k.0 (, add)
-New Range: (0, 100)
-
-@Cmp
-
-@Br-Complex
-k.0 < 100
-Successor0: (0, 99)
-Successor1: (100, 100)
-CHECK RANGE of k.0: (0, 99) to (0, 99)
+k.0 == 100
+while.end: (100, 100)
+while.body: (-2147483648, 2147483647)
 CHECK RANGE of k.0: (100, 100) to (100, 100)
+CHECK RANGE of k.0: (-2147483648, 2147483647) to (-2147483648, 2147483647)
 
 --- VALUE-RANGES ---
 BB: entry
 
 BB: while.cond
-   k.0(0, 100) = 101 is 7bits
-   add(1, 100) = 100 is 7bits
+   k.0(-2147483648, 2147483647) = 2 is 1bits
+   add(-2147483648, 2147483647) = 2 is 1bits
 
 BB: while.body
-   k.0(0, 99) = 100 is 7bits
-   add(1, 100) = 100 is 7bits
+   k.0(-2147483648, 2147483647) = 2 is 1bits
+   add(-2147483648, 2147483647) = 2 is 1bits
 
 BB: while.end
    k.0(100, 100) = 1 is 1bits

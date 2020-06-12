@@ -3,6 +3,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Argument.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -28,6 +29,7 @@ namespace
             // Max int range (infinity)
             int infMax = std::numeric_limits<int>::max();
             int infMin = std::numeric_limits<int>::min();
+            int maxIter = 10;
 
             // Create Null range reference
             std::pair<int, int> emptyIntPair(infMin, infMax);
@@ -51,13 +53,20 @@ namespace
             // }
             std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> listRange;
 
+            // iterator_range<Argument> args = Func.args();
+            // for (Argument iter = args.begin(); iter != args.end(); iter++)
+            // {
+            //     errs() << "Param: " << iter.getName() << "\n";
+            // }
+
             // --- ALGORITHM BEGIN --- //
             // Entry basic block into workList (starting point)
             workList.push_back(&Func.getEntryBlock());
 
             // Loop on the worklist until all dependencies are resolved
-            while (workList.size() != 0)
+            while (workList.size() != 0 && maxIter > 0)
             {
+                --maxIter;
                 // Get next BasicBlock in workList and remove it
                 BasicBlock *BB = workList.at(0);
                 workList.erase(workList.begin());
@@ -106,6 +115,32 @@ namespace
                                 errs() << "Arg" << args << ": " << argOper->getName() << " (REF)\n";
                             }
                         }
+                    }
+                    else if (auto *loadInst = dyn_cast<LoadInst>(I))
+                    {
+                        errs() << "@Load\n";
+                        errs() << loadInst->getPointerOperand()->getName() << "\n";
+                        errs() << loadInst->getName() << "\n";
+                    }
+                    else if (auto *selectInst = dyn_cast<SelectInst>(I))
+                    {
+                        errs() << "@Select\n";
+                        errs() << "Condition: " << selectInst->getCondition()->getName() << "\n";
+                        errs() << "True: " << selectInst->getTrueValue()->getName() << "\n";
+                        errs() << "False: " << selectInst->getFalseValue()->getName() << "\n";
+
+                        // std::pair<int, int> rangeRef(infMin, infMax);
+                        // std::pair<Value *, std::pair<int, int>> rangePair(selectInst, rangeRef);
+                        // errs() << "NEW REFERENCE VALUE: " << selectInst->getName() << " (" << rangeRef.first << ", " << rangeRef.second << ") into " << BB->getName() << "\n";
+                        // if (hasValueReference(BB, selectInst, &listRange))
+                        // {
+                        //     listRange.find(BB)->second.find(selectInst)->second.first = rangeRef.first;
+                        //     listRange.find(BB)->second.find(selectInst)->second.second = rangeRef.second;
+                        // }
+                        // else
+                        // {
+                        //     listRange.find(BB)->second.insert(rangePair);
+                        // }
                     }
                     else if (auto *operInst = dyn_cast<BinaryOperator>(I))
                     {
@@ -191,7 +226,38 @@ namespace
                         // a = b + c
                         else
                         {
-                            // TODO: Both are references
+                            // a = b + c
+                            if (oper0->hasName() && oper1->hasName())
+                            {
+                                errs() << "BOTH REF: " << oper0->getName() << ", " << oper1->getName() << "\n";
+                            }
+                            // a = b + [%0]
+                            else if (oper0->hasName())
+                            {
+                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+                                {
+                                    errs() << "BOTH REF: " << oper0->getName() << ", " << CI->getZExtValue() << "\n";
+                                }
+                            }
+                            // a = [%0] + b
+                            else if (oper1->hasName())
+                            {
+                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+                                {
+                                    errs() << "BOTH REF: " << CI->getZExtValue() << ", " << oper1->getName() << "\n";
+                                }
+                            }
+                            // a = [%0] + [%1]
+                            else
+                            {
+                                if (ConstantInt *CI0 = dyn_cast<ConstantInt>(oper0))
+                                {
+                                    if (ConstantInt *CI1 = dyn_cast<ConstantInt>(oper0))
+                                    {
+                                        errs() << "BOTH REF: " << CI0->getZExtValue() << ", " << CI1->getZExtValue() << "\n";
+                                    }
+                                }
+                            }
                         }
 
                         std::pair<Value *, std::pair<int, int>> rangePair(operInst, rangeRef);
@@ -276,8 +342,8 @@ namespace
                                 }
 
                                 // Check for new range and add it in case of updates
-                                errs() << "Successor0: (" << rangeSuccessor0.first << ", " << rangeSuccessor0.second << ")\n";
-                                errs() << "Successor1: (" << rangeSuccessor1.first << ", " << rangeSuccessor1.second << ")\n";
+                                errs() << succ0->getName() << ": (" << rangeSuccessor0.first << ", " << rangeSuccessor0.second << ")\n";
+                                errs() << succ1->getName() << ": (" << rangeSuccessor1.first << ", " << rangeSuccessor1.second << ")\n";
 
                                 bool isUpdated0 = applyComplexBr(succ0, oper, &listRange, rangeSuccessor0, infMin, infMax);
                                 bool isUpdated1 = applyComplexBr(succ1, oper, &listRange, rangeSuccessor1, infMin, infMax);
@@ -388,7 +454,7 @@ namespace
                 {
                     std::map<Value *, std::pair<int, int>>::iterator pairBB = listBB.begin();
                     int intRange = std::abs(pairBB->second.first - pairBB->second.second) + 1;
-                    int numOfBit = std::ceil(intRange <= 2 ? 1 : std::log2(intRange));
+                    int numOfBit = std::ceil(intRange <= 2 ? 1 : std::log2(intRange)) + 1;
                     errs() << "   " << pairBB->first->getName() << "(" << pairBB->second.first << ", " << pairBB->second.second << ") = " << intRange << " is " << numOfBit << "bits\n";
                     listBB.erase(listBB.begin());
                 }
@@ -518,6 +584,11 @@ namespace
         // Combine two ranges to compute their new value
         std::pair<int, int> phiCombine(std::pair<int, int> range0, std::pair<int, int> range1, int infMin, int infMax)
         {
+            if ((range0.first == infMin && range0.second == infMax) || (range1.first == infMin && range1.second == infMax))
+            {
+                return std::pair<int, int>(infMin, infMax);
+            }
+
             return std::pair<int, int>(
                 range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::min(range0.first, range1.first),
                 range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::max(range0.second, range1.second));
@@ -566,6 +637,25 @@ namespace
                     rangeSuccessor1->second = cmpValue;
                 }
             }
+            else if (pred == ICmpInst::ICMP_ULT)
+            {
+                // a < 1 [unsigned]
+                if (isRefOper0)
+                {
+                    errs() << oper->getName() << " < " << cmpValue << " [unsigned]\n";
+                    rangeSuccessor0->first = 0;
+                    rangeSuccessor0->second = cmpValue - 1;
+                    rangeSuccessor1->first = cmpValue;
+                }
+                // 1 < a (a > 1) [unsigned]
+                else
+                {
+                    errs() << cmpValue << " < " << oper->getName() << " [unsigned]\n";
+                    rangeSuccessor0->first = cmpValue + 1;
+                    rangeSuccessor1->first = 0;
+                    rangeSuccessor1->second = cmpValue;
+                }
+            }
             else if (pred == ICmpInst::ICMP_SLE)
             {
                 // a <= 1
@@ -600,6 +690,25 @@ namespace
                     rangeSuccessor1->first = cmpValue;
                 }
             }
+            else if (pred == ICmpInst::ICMP_UGT)
+            {
+                // a > 1
+                if (isRefOper0)
+                {
+                    errs() << oper->getName() << " > " << cmpValue << "\n";
+                    rangeSuccessor0->first = cmpValue + 1;
+                    rangeSuccessor1->first = 0;
+                    rangeSuccessor1->second = cmpValue;
+                }
+                // 1 > a
+                else
+                {
+                    errs() << cmpValue << " > " << oper->getName() << "\n";
+                    rangeSuccessor0->first = cmpValue - 1;
+                    rangeSuccessor0->second = cmpValue - 1;
+                    rangeSuccessor1->first = cmpValue;
+                }
+            }
             else if (pred == ICmpInst::ICMP_SGE)
             {
                 // a >= 1
@@ -616,6 +725,13 @@ namespace
                     rangeSuccessor0->second = cmpValue;
                     rangeSuccessor1->first = cmpValue + 1;
                 }
+            }
+            else if (pred == ICmpInst::ICMP_EQ)
+            {
+                // a == 1
+                errs() << oper->getName() << " == " << cmpValue << "\n";
+                rangeSuccessor0->first = cmpValue;
+                rangeSuccessor0->second = cmpValue;
             }
         }
 

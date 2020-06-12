@@ -2,15 +2,15 @@
 
 int main() {
   int k = 0;
-  int j = k;
+  int a = 1;
 
-  if (k < 100) {
+  while(k < 20) {
+    for (int j = 0; j < 10; j++) {
+      a = a + 3;
+    }
     k = k + 1;
-    j = k;
-  } else {
-    j = j - 1;
-    k = j;
   }
+  printf ("%d", k);
 
-  return k;
+  return a;
 }

@@ -1,65 +1,40 @@
 --- entry ---
+___No visited
+
 @Br-Simple
 entry to while.cond
 ADDED TO WORKLIST while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
 
 
 --- while.cond ---
+___No references
+
 @Phi: k.0 (, add2)
 ONE REFERENCE MISSING
 
 @Cmp
 
 @Br-Complex
-k.0 < 100
-Successor0: (-2147483648, 99)
-Successor1: (100, 2147483647)
-NEW VISITED ADDED: while.body
+k.0 == 100
+while.end: (100, 100)
+if.end: (-2147483648, 2147483647)
 NEW VISITED ADDED: while.end
-ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
-ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
-
-
---- while.body ---
-@Cmp
-
-@Br-Complex
-0 < k.0
-Successor0: (1, 99)
-Successor1: (-2147483648, 0)
-NEW VISITED ADDED: if.then
 NEW VISITED ADDED: if.end
-ADDED TO WORKLIST if.then (sameRanges=1, wasVisited=1, isUpdated=1)
+ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
 ADDED TO WORKLIST if.end (sameRanges=1, wasVisited=1, isUpdated=1)
 
 
 --- while.end ---
+___k.0(100, 100)
 
-
---- if.then ---
-@Operation
-NEW REFERENCE VALUE: add (1, 1) into if.then
-
-@Operation
-NEW REFERENCE VALUE: sub (0, 98) into if.then
-
-@Br-Simple
-if.then to if.end
-
-What about k.0?
-DIFFERENT? -> k.0: if.then (1, 99) - if.end (-2147483648, 0)
-YES! -> (1, 99)
-
-What about add?
-NOW ADDED: add
-
-What about sub?
-NOW ADDED: sub
 
 
 --- if.end ---
+___k.0(-2147483648, 2147483647)
+
 @Operation
-NEW REFERENCE VALUE: add2 (2, 100) into if.end
+BINARY OPERATION: original -> k.0 (-2147483648, 2147483647) into if.end
+NEW REFERENCE VALUE: add2 (-2147483648, 2147483647) into if.end
 
 @Br-Simple
 if.end to while.cond
@@ -67,109 +42,37 @@ if.end to while.cond
 What about k.0?
 NOW ADDED: k.0
 
-What about add?
-NOW ADDED: add
-
-What about sub?
-NOW ADDED: sub
-
 What about add2?
 NOW ADDED: add2
 ADDED TO WORKLIST while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
 
 
 --- while.cond ---
+___k.0(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+
 @Phi: k.0 (, add2)
-New Range: (0, 100)
+New Range: (-2147483648, 2147483647)
 
 @Cmp
 
 @Br-Complex
-k.0 < 100
-Successor0: (0, 99)
-Successor1: (100, 100)
-CHECK RANGE of k.0: (-2147483648, 99) to (0, 99)
-RANGE CHANGED: k.0 from while.body
-CHECK RANGE of k.0: (100, 2147483647) to (100, 100)
-RANGE CHANGED: k.0 from while.end
-ADDED TO WORKLIST while.body (sameRanges=1, wasVisited=1, isUpdated=1)
-ADDED TO WORKLIST while.end (sameRanges=1, wasVisited=1, isUpdated=1)
-
-
---- while.body ---
-@Cmp
-
-@Br-Complex
-0 < k.0
-Successor0: (1, 99)
-Successor1: (0, 0)
-CHECK RANGE of k.0: (1, 99) to (1, 99)
-CHECK RANGE of k.0: (1, 99) to (0, 0)
-RANGE CHANGED: k.0 from if.end
-ADDED TO WORKLIST if.end (sameRanges=1, wasVisited=1, isUpdated=1)
-
-
---- while.end ---
-
-
---- if.end ---
-@Operation
-NEW REFERENCE VALUE: add2 (1, 100) into if.end
-
-@Br-Simple
-if.end to while.cond
-
-What about k.0?
-DIFFERENT? -> k.0: if.end (0, 99) - while.cond (0, 100)
-YES! -> (0, 100)
-
-What about add?
-DIFFERENT? -> add: if.end (1, 1) - while.cond (1, 1)
-
-What about sub?
-DIFFERENT? -> sub: if.end (0, 98) - while.cond (0, 98)
-
-What about add2?
-DIFFERENT? -> add2: if.end (1, 100) - while.cond (2, 100)
-YES! -> (1, 100)
-ADDED TO WORKLIST while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
-
-
---- while.cond ---
-@Phi: k.0 (, add2)
-New Range: (0, 100)
-
-@Cmp
-
-@Br-Complex
-k.0 < 100
-Successor0: (0, 99)
-Successor1: (100, 100)
-CHECK RANGE of k.0: (0, 99) to (0, 99)
+k.0 == 100
+while.end: (100, 100)
+if.end: (-2147483648, 2147483647)
 CHECK RANGE of k.0: (100, 100) to (100, 100)
+CHECK RANGE of k.0: (-2147483648, 2147483647) to (-2147483648, 2147483647)
 
 --- VALUE-RANGES ---
 BB: entry
 
 BB: while.cond
-   k.0(0, 100) = 101 is 7bits
-   add(1, 1) = 1 is 1bits
-   sub(0, 98) = 99 is 7bits
-   add2(1, 100) = 100 is 7bits
+   k.0(-2147483648, 2147483647) = 2 is 2bits
+   add2(-2147483648, 2147483647) = 2 is 2bits
 
 BB: if.end
-   k.0(0, 99) = 100 is 7bits
-   add(1, 1) = 1 is 1bits
-   sub(0, 98) = 99 is 7bits
-   add2(1, 100) = 100 is 7bits
-
-BB: while.body
-   k.0(0, 99) = 100 is 7bits
+   k.0(-2147483648, 2147483647) = 2 is 2bits
+   add2(-2147483648, 2147483647) = 2 is 2bits
 
 BB: while.end
-   k.0(100, 100) = 1 is 1bits
-
-BB: if.then
-   k.0(1, 99) = 99 is 7bits
-   add(1, 1) = 1 is 1bits
-   sub(0, 98) = 99 is 7bits
+   k.0(100, 100) = 1 is 2bits
