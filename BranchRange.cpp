@@ -29,19 +29,17 @@ namespace
             // Max int range (infinity)
             int infMax = std::numeric_limits<int>::max();
             int infMin = std::numeric_limits<int>::min();
-            int maxIter = 10;
+            int maxLoops = 15;
+            int iterLoops = 0;
 
             // Create Null range reference
             std::pair<int, int> emptyIntPair(infMin, infMax);
             std::pair<Value *, std::pair<int, int>> emptyPair(nullValue, emptyIntPair);
-            // std::vector<std::pair<Value *, std::pair<int, int>>> emptyVector;
             std::map<Value *, std::pair<int, int>> emptyMap;
 
             // --- DATA STRUCTURES --- //
             // Save cmp instructions to resolve on br instructions
-            std::vector<ICmpInst::Predicate> listCmp;
-            std::vector<Value *> listCmpOpe0;
-            std::vector<Value *> listCmpOpe1;
+            std::map<Value *, CmpInst *> mapCmp;
 
             // List of basic blocks left to cycle
             std::vector<BasicBlock *> workList;
@@ -64,13 +62,13 @@ namespace
             workList.push_back(&Func.getEntryBlock());
 
             // Loop on the worklist until all dependencies are resolved
-            while (workList.size() != 0 && maxIter > 0)
+            while (workList.size() != 0 && iterLoops < maxLoops)
             {
-                --maxIter;
                 // Get next BasicBlock in workList and remove it
+                ++iterLoops;
                 BasicBlock *BB = workList.at(0);
                 workList.erase(workList.begin());
-                errs() << "\n--- " << BB->getName() << " ---\n";
+                errs() << "\n--- (" << iterLoops << ") " << BB->getName() << " ---\n";
 
                 // --- PRINT CURRENT VALUE RANGES INSIDE BLOCK --- //
                 if (isAlreadyVisited(BB, &listRange))
@@ -99,8 +97,21 @@ namespace
                 {
                     // Get instruction from iterator
                     Instruction *I = &*it;
-
-                    if (auto *callInst = dyn_cast<CallInst>(I))
+                    if (auto *cmpInst = dyn_cast<CmpInst>(I)) // COMPLETE
+                    {
+                        errs() << "@Cmp\n";
+                        // Cmp information needed only when at least one reference
+                        if (cmpInst->getOperand(0)->hasName() || cmpInst->getOperand(1)->hasName())
+                        {
+                            if (mapCmp.find(cmpInst) == mapCmp.end())
+                            {
+                                errs() << "NEW: " << cmpInst->getName() << "\n\n";
+                                std::pair<Value *, CmpInst *> newCmpInst(cmpInst, cmpInst);
+                                mapCmp.insert(newCmpInst);
+                            }
+                        }
+                    }
+                    else if (auto *callInst = dyn_cast<CallInst>(I))
                     {
                         errs() << "@Call\n";
                         for (unsigned args = 0; args < callInst->getNumArgOperands(); ++args)
@@ -128,19 +139,6 @@ namespace
                         errs() << "Condition: " << selectInst->getCondition()->getName() << "\n";
                         errs() << "True: " << selectInst->getTrueValue()->getName() << "\n";
                         errs() << "False: " << selectInst->getFalseValue()->getName() << "\n";
-
-                        // std::pair<int, int> rangeRef(infMin, infMax);
-                        // std::pair<Value *, std::pair<int, int>> rangePair(selectInst, rangeRef);
-                        // errs() << "NEW REFERENCE VALUE: " << selectInst->getName() << " (" << rangeRef.first << ", " << rangeRef.second << ") into " << BB->getName() << "\n";
-                        // if (hasValueReference(BB, selectInst, &listRange))
-                        // {
-                        //     listRange.find(BB)->second.find(selectInst)->second.first = rangeRef.first;
-                        //     listRange.find(BB)->second.find(selectInst)->second.second = rangeRef.second;
-                        // }
-                        // else
-                        // {
-                        //     listRange.find(BB)->second.insert(rangePair);
-                        // }
                     }
                     else if (auto *operInst = dyn_cast<BinaryOperator>(I))
                     {
@@ -166,12 +164,8 @@ namespace
                             // a = 1 + b
                             else
                             {
-                                std::pair<int, int> valueRef = emptyIntPair;
-                                if (hasValueReference(BB, oper1, &listRange))
-                                {
-                                    valueRef = getValueReference(BB, oper1, &listRange)->second;
-                                }
-                                errs() << "BINARY OPERATION: original -> " << oper1->getName() << " (" << valueRef.first << ", " << valueRef.second << ") into " << BB->getName() << "\n";
+                                std::pair<int, int> valueRef = getValueReference(BB, oper1, &listRange, infMin, infMax)->second;
+                                errs() << operInst->getName() << " = " << oper1->getName() << " (" << valueRef.first << ", " << valueRef.second << ") | " << constValue0 << " [" << BB->getName() << "]\n";
 
                                 if (valueRef.first != infMin)
                                 {
@@ -198,12 +192,8 @@ namespace
                             // a = b + 1
                             if (oper0->hasName())
                             {
-                                std::pair<int, int> valueRef = emptyIntPair;
-                                if (hasValueReference(BB, oper0, &listRange))
-                                {
-                                    valueRef = getValueReference(BB, oper0, &listRange)->second;
-                                }
-                                errs() << "BINARY OPERATION: original -> " << oper0->getName() << " (" << valueRef.first << ", " << valueRef.second << ") into " << BB->getName() << "\n";
+                                std::pair<int, int> valueRef = getValueReference(BB, oper0, &listRange, infMin, infMax)->second;
+                                errs() << operInst->getName() << " = " << oper0->getName() << " (" << valueRef.first << ", " << valueRef.second << ") | " << constValue1 << " [" << BB->getName() << "]\n";
 
                                 if (valueRef.first != infMin)
                                 {
@@ -261,7 +251,7 @@ namespace
                         }
 
                         std::pair<Value *, std::pair<int, int>> rangePair(operInst, rangeRef);
-                        errs() << "NEW REFERENCE VALUE: " << operInst->getName() << " (" << rangeRef.first << ", " << rangeRef.second << ") into " << BB->getName() << "\n";
+                        errs() << "NEW: " << operInst->getName() << " (" << rangeRef.first << ", " << rangeRef.second << ") into " << BB->getName() << "\n";
                         if (hasValueReference(BB, operInst, &listRange))
                         {
                             listRange.find(BB)->second.find(operInst)->second.first = rangeRef.first;
@@ -284,159 +274,129 @@ namespace
                         else
                         {
                             errs() << "@Br-Complex\n";
+                            errs() << "Condition: " << brInst->getCondition()->getName() << "\n\n";
                             BasicBlock *succ0 = brInst->getSuccessor(0);
                             BasicBlock *succ1 = brInst->getSuccessor(1);
 
                             // Get previous cmp values
-                            if (listCmpOpe0.size() != 0)
+                            CmpInst *cmpInst = mapCmp.find(brInst->getCondition())->second;
+                            ICmpInst::Predicate pred = cmpInst->getPredicate();
+                            Value *oper0 = cmpInst->getOperand(0);
+                            Value *oper1 = cmpInst->getOperand(1);
+
+                            // Default new range pairs and value
+                            std::pair<int, int> rangeSuccessor0(infMin, infMax);
+                            std::pair<int, int> rangeSuccessor1(infMin, infMax);
+                            Value *oper = oper0;
+
+                            // a < b
+                            if (oper0->hasName() && oper1->hasName())
                             {
-                                ICmpInst::Predicate pred = listCmp.at(0);
-                                Value *oper0 = listCmpOpe0.at(0);
-                                Value *oper1 = listCmpOpe1.at(0);
-                                listCmp.pop_back();
-                                listCmpOpe0.pop_back();
-                                listCmpOpe1.pop_back();
-
-                                // Default new range pairs and value
-                                std::pair<int, int> rangeSuccessor0(infMin, infMax);
-                                std::pair<int, int> rangeSuccessor1(infMin, infMax);
-                                Value *oper = oper0;
-
-                                // a < b
-                                if (oper0->hasName() && oper1->hasName())
-                                {
-                                    // TODO: Cmp instruction both reference values
-                                }
-                                // a < 1
-                                else if (oper0->hasName())
-                                {
-                                    // Select reference to operand0
-                                    oper = oper0;
-
-                                    if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
-                                    {
-                                        // Change range of successors based on reference, constant value, and predicate
-                                        computeCmpRange(true, pred, oper, CI->getZExtValue(), &rangeSuccessor0, &rangeSuccessor1);
-                                    }
-                                }
-                                // 1 < a
-                                else
-                                {
-                                    // Select reference to operand0
-                                    oper = oper1;
-
-                                    if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
-                                    {
-                                        // Change range of successors based on reference, constant value, and predicate
-                                        computeCmpRange(false, pred, oper, CI->getZExtValue(), &rangeSuccessor0, &rangeSuccessor1);
-                                    }
-                                }
-
-                                if (hasValueReference(BB, oper, &listRange))
-                                {
-                                    std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, oper, &listRange);
-                                    rangeSuccessor0.first = std::max(rangeSuccessor0.first, valRef->second.first);
-                                    rangeSuccessor0.second = std::min(rangeSuccessor0.second, valRef->second.second);
-                                    rangeSuccessor1.first = std::max(rangeSuccessor1.first, valRef->second.first);
-                                    rangeSuccessor1.second = std::min(rangeSuccessor1.second, valRef->second.second);
-                                }
-
-                                // Check for new range and add it in case of updates
-                                errs() << succ0->getName() << ": (" << rangeSuccessor0.first << ", " << rangeSuccessor0.second << ")\n";
-                                errs() << succ1->getName() << ": (" << rangeSuccessor1.first << ", " << rangeSuccessor1.second << ")\n";
-
-                                bool isUpdated0 = applyComplexBr(succ0, oper, &listRange, rangeSuccessor0, infMin, infMax);
-                                bool isUpdated1 = applyComplexBr(succ1, oper, &listRange, rangeSuccessor1, infMin, infMax);
-
-                                // Check successor0 if already visited
-                                applySimpleBr(false, isUpdated0, succ0, BB, &listRange, &workList, emptyMap, infMin, infMax);
-                                applySimpleBr(false, isUpdated1, succ1, BB, &listRange, &workList, emptyMap, infMin, infMax);
+                                // TODO: Cmp instruction both reference values
                             }
+                            // a < 1
+                            else if (oper0->hasName())
+                            {
+                                // Select reference to operand0
+                                oper = oper0;
+
+                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+                                {
+                                    // Change range of successors based on reference, constant value, and predicate
+                                    computeCmpRange(true, pred, oper, CI->getZExtValue(), &rangeSuccessor0, &rangeSuccessor1);
+                                }
+                            }
+                            // 1 < a
                             else
                             {
-                                applySimpleBr(false, false, succ0, BB, &listRange, &workList, emptyMap, infMin, infMax);
-                                applySimpleBr(false, false, succ1, BB, &listRange, &workList, emptyMap, infMin, infMax);
+                                // Select reference to operand0
+                                oper = oper1;
+
+                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+                                {
+                                    // Change range of successors based on reference, constant value, and predicate
+                                    computeCmpRange(false, pred, oper, CI->getZExtValue(), &rangeSuccessor0, &rangeSuccessor1);
+                                }
                             }
+
+                            if (hasValueReference(BB, oper, &listRange))
+                            {
+                                std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, oper, &listRange, infMin, infMax);
+                                rangeSuccessor0.first = std::max(rangeSuccessor0.first, valRef->second.first);
+                                rangeSuccessor0.second = std::min(rangeSuccessor0.second, valRef->second.second);
+                                rangeSuccessor1.first = std::max(rangeSuccessor1.first, valRef->second.first);
+                                rangeSuccessor1.second = std::min(rangeSuccessor1.second, valRef->second.second);
+                            }
+
+                            // Check for new range and add it in case of updates
+                            errs() << succ0->getName() << ": (" << rangeSuccessor0.first << ", " << rangeSuccessor0.second << ")\n";
+                            errs() << succ1->getName() << ": (" << rangeSuccessor1.first << ", " << rangeSuccessor1.second << ")\n";
+
+                            bool isUpdated0 = applyComplexBr(succ0, oper, &listRange, rangeSuccessor0, infMin, infMax);
+                            bool isUpdated1 = applyComplexBr(succ1, oper, &listRange, rangeSuccessor1, infMin, infMax);
+
+                            // Check successor0 if already visited
+                            applySimpleBr(false, isUpdated0, succ0, BB, &listRange, &workList, emptyMap, infMin, infMax);
+                            applySimpleBr(false, isUpdated1, succ1, BB, &listRange, &workList, emptyMap, infMin, infMax);
                         }
                     }
-                    else if (auto *cmpInst = dyn_cast<CmpInst>(I))
+                    else if (auto *phiInst = dyn_cast<PHINode>(I)) // COMPLETE?
                     {
-                        errs() << "@Cmp\n";
-                        // Cmp information needed only when at least one reference
-                        if (cmpInst->getOperand(0)->hasName() || cmpInst->getOperand(1)->hasName())
-                        {
-                            ICmpInst::Predicate pred = cmpInst->getPredicate();
-                            listCmp.push_back(pred);
-                            listCmpOpe0.push_back(cmpInst->getOperand(0));
-                            listCmpOpe1.push_back(cmpInst->getOperand(1));
-                        }
-                    }
-                    else if (auto *phiInst = dyn_cast<PHINode>(I))
-                    {
+                        // General ranges and values
                         Value *operand0 = phiInst->getOperand(0);
                         Value *operand1 = phiInst->getOperand(1);
+                        std::map<Value *, std::pair<int, int>>::iterator valRefSource = getValueReference(BB, phiInst, &listRange, infMin, infMax);
+                        std::pair<int, int> phiPair(infMin, infMax);
 
                         errs() << "@Phi: " << phiInst->getName() << " (" << operand0->getName() << ", " << operand1->getName() << ")\n";
 
                         // Both referenced values
                         if (operand0->hasName() && operand1->hasName())
                         {
-                            // Both known references
-                            if (hasValueReference(BB, operand0, &listRange) && hasValueReference(BB, operand1, &listRange))
-                            {
-                                std::map<Value *, std::pair<int, int>>::iterator valRef0 = getValueReference(BB, operand0, &listRange);
-                                std::map<Value *, std::pair<int, int>>::iterator valRef1 = getValueReference(BB, operand1, &listRange);
-                                std::pair<int, int> phiPair = phiCombine(valRef0->second, valRef1->second, infMin, infMax);
-                                updateValueReference(BB, phiInst, phiPair, &listRange);
-                                errs() << "New Range: (" << phiPair.first << ", " << phiPair.second << ")\n";
-                            }
-                            else
-                            {
-                                errs() << "BOTH REFERENCE MISSING\n";
-                            }
+                            std::map<Value *, std::pair<int, int>>::iterator valRef0 = getValueReference(BB, operand0, &listRange, infMin, infMax);
+                            std::map<Value *, std::pair<int, int>>::iterator valRef1 = getValueReference(BB, operand1, &listRange, infMin, infMax);
+
+                            // Apply phi combine operation
+                            phiPair = phiOpe(valRefSource->second, valRef0->second, valRef1->second);
                         }
                         // Operator1 is known reference, Operator0 is constant
-                        else if (!operand0->hasName() && operand1->hasName() && hasValueReference(BB, operand1, &listRange))
+                        else if (!operand0->hasName() && operand1->hasName())
                         {
-                            if (ConstantInt *CI = dyn_cast<ConstantInt>(operand0))
-                            {
-                                int constValue = CI->getZExtValue();
-                                std::pair<int, int> constPair(constValue, constValue);
-                                std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, operand1, &listRange);
-                                std::pair<int, int> phiPair = phiCombine(constPair, valRef->second, infMin, infMax);
-                                updateValueReference(BB, phiInst, phiPair, &listRange);
-                                errs() << "New Range: (" << phiPair.first << ", " << phiPair.second << ")\n";
-                            }
+                            std::pair<int, int> constPair = getConstantPair(operand0, infMin, infMax);
+                            std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, operand1, &listRange, infMin, infMax);
+
+                            // Apply phi combine operation
+                            phiPair = phiOpe(valRefSource->second, constPair, valRef->second);
                         }
                         // Operator0 is known reference, Operator1 is constant
                         else if (!operand1->hasName() && operand0->hasName() && hasValueReference(BB, operand0, &listRange))
                         {
-                            if (ConstantInt *CI = dyn_cast<ConstantInt>(operand1))
-                            {
-                                int constValue = CI->getZExtValue();
-                                std::pair<int, int> constPair(constValue, constValue);
-                                std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, operand0, &listRange);
-                                std::pair<int, int> phiPair = phiCombine(valRef->second, constPair, infMin, infMax);
-                                updateValueReference(BB, phiInst, phiPair, &listRange);
-                                errs() << "New Range: (" << phiPair.first << ", " << phiPair.second << ")\n";
-                            }
+                            std::pair<int, int> constPair = getConstantPair(operand1, infMin, infMax);
+                            std::map<Value *, std::pair<int, int>>::iterator valRef = getValueReference(BB, operand0, &listRange, infMin, infMax);
+
+                            // Apply phi combine operation
+                            phiPair = phiOpe(valRefSource->second, valRef->second, constPair);
                         }
                         // Both integers
                         else if (!operand0->hasName() && !operand1->hasName())
                         {
                             // TODO: Phi of two constant values (is it possible?)
-                            errs() << "TWO INTEGERS\n";
+                            errs() << "\n\nTWO INTEGERS\n\n";
                         }
                         else
                         {
-                            errs() << "ONE REFERENCE MISSING\n";
+                            errs() << "\n\nUNEXPECTED SITUATION!\n\n";
                         }
+
+                        // Update/Insert new phi range to the value in the current basic block
+                        updateValueReference(BB, phiInst, phiPair, &listRange);
+                        errs() << "New Range: (" << phiPair.first << ", " << phiPair.second << ")\n";
                     }
 
                     errs() << "\n";
                 }
 
-                // If basic block not already visited
+                // If basic block not already visited, mark as visited
                 if (!isAlreadyVisited(BB, &listRange))
                 {
                     listRange.insert(std::pair<BasicBlock *, std::map<Value *, std::pair<int, int>>>(BB, emptyMap));
@@ -444,6 +404,10 @@ namespace
             }
 
             // --- PRINT FOUND RANGES FOR EACH BASIC BLOCK VISITED --- //
+            if (iterLoops == maxLoops)
+            {
+                errs() << "--- (MAX ITERATIONS LIMIT) ---\n";
+            }
             errs() << "--- VALUE-RANGES ---\n";
             std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>>::iterator resIt;
             for (resIt = listRange.begin(); resIt != listRange.end(); ++resIt)
@@ -453,7 +417,7 @@ namespace
                 while (!listBB.empty())
                 {
                     std::map<Value *, std::pair<int, int>>::iterator pairBB = listBB.begin();
-                    int intRange = std::abs(pairBB->second.first - pairBB->second.second) + 1;
+                    int intRange = std::abs(pairBB->second.second - pairBB->second.first) + 1;
                     int numOfBit = std::ceil(intRange <= 2 ? 1 : std::log2(intRange)) + 1;
                     errs() << "   " << pairBB->first->getName() << "(" << pairBB->second.first << ", " << pairBB->second.second << ") = " << intRange << " is " << numOfBit << "bits\n";
                     listBB.erase(listBB.begin());
@@ -482,7 +446,7 @@ namespace
 
             if ((!sameRanges || !isVisited || isUpdated) && !isInWL)
             {
-                errs() << "ADDED TO WORKLIST " << BB->getName() << " (sameRanges=" << sameRanges << ", wasVisited=" << isVisited << ", isUpdated=" << isUpdated << ")\n";
+                errs() << "+ " << BB->getName() << " (sameRanges=" << !sameRanges << ", wasVisited=" << !isVisited << ", isUpdated=" << isUpdated << ")\n";
                 workList->push_back(BB);
             }
         }
@@ -497,7 +461,7 @@ namespace
             // Basic block not already visited, add it with the new range attached
             if (!isAlreadyVisited(BB, listRange))
             {
-                errs() << "NEW VISITED ADDED: " << BB->getName() << "\n";
+                // errs() << "NEW VISITED ADDED: " << BB->getName() << "\n";
                 std::map<Value *, std::pair<int, int>> newList{rangePair};
                 listRange->insert(std::pair<BasicBlock *, std::map<Value *, std::pair<int, int>>>(BB, newList));
                 return true;
@@ -513,18 +477,18 @@ namespace
             }
 
             // Get value reference from listRange
-            std::map<Value *, std::pair<int, int>>::iterator valueRef = getValueReference(BB, operand, listRange);
+            std::map<Value *, std::pair<int, int>>::iterator valueRef = getValueReference(BB, operand, listRange, infMin, infMax);
             Value *val = valueRef->first;
             std::pair<int, int> valRange = valueRef->second;
 
-            errs() << "CHECK RANGE of " << val->getName() << ": (" << valRange.first << ", " << valRange.second << ") to (" << rangeSuccessor.first << ", " << rangeSuccessor.second << ")\n";
+            errs() << "-" << val->getName() << ": (" << valRange.first << ", " << valRange.second << ") to (" << rangeSuccessor.first << ", " << rangeSuccessor.second << ")\n";
 
             // --- CASE 3: Value range changed --- //
             if (valRange.first != rangeSuccessor.first || valRange.second != rangeSuccessor.second)
             {
                 // Already in the list but range has changed, COMBINE the ranges
-                errs() << "RANGE CHANGED: " << operand->getName() << " from " << BB->getName() << "\n";
                 std::pair<int, int> newPairRange = phiCombine(valRange, rangeSuccessor, infMin, infMax);
+                errs() << "NEW: " << operand->getName() << " (" << newPairRange.first << ", " << newPairRange.second << ") in " << BB->getName() << "\n\n";
                 listRange->find(BB)->second.find(operand)->second = newPairRange;
                 return true;
             }
@@ -542,30 +506,18 @@ namespace
             std::map<Value *, std::pair<int, int>>::iterator resIt;
             for (resIt = valuesSource.begin(); resIt != valuesSource.end(); ++resIt)
             {
-                errs() << "\nWhat about " << resIt->first->getName() << "?\n";
                 if (hasValueReference(BBBr, resIt->first, listRange))
                 {
-                    std::map<Value *, std::pair<int, int>>::iterator valuesBr = getValueReference(BBBr, resIt->first, listRange);
-                    errs() << "DIFFERENT? -> " << resIt->first->getName() << ": " << BBSource->getName() << " (" << resIt->second.first << ", " << resIt->second.second << ") - " << BBBr->getName() << " (" << valuesBr->second.first << ", " << valuesBr->second.second << ")\n";
+                    std::map<Value *, std::pair<int, int>>::iterator valuesBr = getValueReference(BBBr, resIt->first, listRange, infMin, infMax);
+                    errs() << resIt->first->getName() << ": " << BBSource->getName() << " (" << resIt->second.first << ", " << resIt->second.second << ") != " << BBBr->getName() << " (" << valuesBr->second.first << ", " << valuesBr->second.second << ") ?\n";
                     if (resIt->second.first != valuesBr->second.first || resIt->second.second != valuesBr->second.second)
                     {
                         // Has value but range is different
-                        // if (isBrSimple)
-                        // {
                         std::pair<int, int> phiPair = phiCombine(resIt->second, valuesBr->second, infMin, infMax);
-                        errs() << "YES! -> (" << phiPair.first << ", " << phiPair.second << ")\n";
+                        errs() << "NEW! -> (" << phiPair.first << ", " << phiPair.second << ")\n";
                         listRange->find(BBBr)->second.find(resIt->first)->second.first = phiPair.first;
                         listRange->find(BBBr)->second.find(resIt->first)->second.second = phiPair.second;
                         hasSame = false;
-                        // }
-                        // else
-                        // {
-                        //     std::pair<int, int> phiPair = brCombine(resIt->second, valuesBr->second, infMin, infMax);
-                        //     errs() << "YES! -> (" << phiPair.first << ", " << phiPair.second << ")\n";
-                        //     listRange->find(BBBr)->second.find(resIt->first)->second.first = phiPair.first;
-                        //     listRange->find(BBBr)->second.find(resIt->first)->second.second = phiPair.second;
-                        //     // hasSame = false;
-                        // }
                     }
                 }
                 else
@@ -573,12 +525,36 @@ namespace
                     // Does not have the value
                     std::pair<Value *, std::pair<int, int>> rangePair(resIt->first, resIt->second);
                     listRange->find(BBBr)->second.insert(rangePair);
-                    errs() << "NOW ADDED: " << resIt->first->getName() << "\n";
+                    errs() << "NEW: " << resIt->first->getName() << " (" << resIt->second.first << ", " << resIt->second.second << ")\n";
                     hasSame = false;
                 }
             }
 
             return hasSame;
+        }
+
+        // Min of minimum values, max of maximum values
+        std::pair<int, int> unionOpe(std::pair<int, int> range0, std::pair<int, int> range1)
+        {
+            return std::pair<int, int>(std::min(range0.first, range1.first), std::max(range0.second, range1.second));
+        }
+
+        // Max of minimum values, min of maximum values
+        std::pair<int, int> interOpe(std::pair<int, int> range0, std::pair<int, int> range1)
+        {
+            return std::pair<int, int>(std::max(range0.first, range1.first), std::min(range0.second, range1.second));
+        }
+
+        // Range combining operation for phi instructions
+        std::pair<int, int> phiOpe(std::pair<int, int> rangeOriginal, std::pair<int, int> rangeSource0, std::pair<int, int> rangeSource1)
+        {
+            return unionOpe(rangeOriginal, interOpe(rangeSource0, rangeSource1));
+        }
+
+        // Range combining operation for br-complex instructions
+        std::pair<int, int> brOpe(std::pair<int, int> rangeSource, std::pair<int, int> rangeDestination, std::pair<int, int> rangeBranch)
+        {
+            return interOpe(rangeBranch, interOpe(rangeSource, rangeDestination));
         }
 
         // Combine two ranges to compute their new value
@@ -588,18 +564,36 @@ namespace
             {
                 return std::pair<int, int>(infMin, infMax);
             }
+            else if (range0.first >= range1.first && range0.second >= range1.first && range0.first >= range1.second && range0.second >= range1.second)
+            {
+                int maxVal = std::max(range0.first, range0.second);
+                if (range0.first == infMax)
+                {
+                    maxVal = range0.second;
+                }
+                else if (range0.second == infMax)
+                {
+                    maxVal = range0.first;
+                }
+                return std::pair<int, int>(maxVal, maxVal);
+            }
+            else if (range1.first >= range0.first && range1.second >= range0.first && range1.first >= range0.second && range1.second >= range0.second)
+            {
+                int maxVal = std::max(range1.first, range1.second);
+                if (range1.first == infMax)
+                {
+                    maxVal = range1.second;
+                }
+                else if (range1.second == infMax)
+                {
+                    maxVal = range1.first;
+                }
+                return std::pair<int, int>(maxVal, maxVal);
+            }
 
             return std::pair<int, int>(
                 range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::min(range0.first, range1.first),
                 range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::max(range0.second, range1.second));
-        }
-
-        // Combine two ranges to compute their new value
-        std::pair<int, int> brCombine(std::pair<int, int> range0, std::pair<int, int> range1, int infMin, int infMax)
-        {
-            return std::pair<int, int>(
-                range0.first == infMin ? range1.first : range1.first == infMin ? range0.first : std::max(range0.first, range1.first),
-                range0.second == infMax ? range1.second : range1.second == infMax ? range0.second : std::min(range0.second, range1.second));
         }
 
         // Compute binary operation (+ or -) result
@@ -770,10 +764,32 @@ namespace
             return listRange->find(next)->second.find(operand) != listRange->find(next)->second.end();
         }
 
-        // Get value and its range from listRange (assumed to exist, check before with hasValueReference)
-        std::map<Value *, std::pair<int, int>>::iterator getValueReference(BasicBlock *next, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange)
+        // Get value and its range from listRange
+        std::map<Value *, std::pair<int, int>>::iterator getValueReference(BasicBlock *BB, Value *operand, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, int infMin, int infMax)
         {
-            return listRange->find(next)->second.find(operand);
+            if (hasValueReference(BB, operand, listRange))
+            {
+                return listRange->find(BB)->second.find(operand);
+            }
+
+            // Unknown variables from -Inf to +Inf
+            std::pair<int, int> emptyIntPair(infMin, infMax);
+            std::map<Value *, std::pair<int, int>> emptyPair;
+            emptyPair[operand] = emptyIntPair;
+            return emptyPair.begin();
+        }
+
+        std::pair<int, int> getConstantPair(Value *operand, int infMin, int infMax)
+        {
+            if (ConstantInt *CI = dyn_cast<ConstantInt>(operand))
+            {
+                int constValue = CI->getZExtValue();
+                return std::pair<int, int>(constValue, constValue);
+            }
+
+            // Unknown variables from -Inf to +Inf
+            errs() << "\n\nEXPECTED CONSTANT IS NOT ACTUALLY CONSTANT!\n\n";
+            return std::pair<int, int>(infMin, infMax);
         }
 
         // Check if given BasicBlock is already inside the workList
@@ -781,7 +797,7 @@ namespace
         {
             return std::find(workList->begin(), workList->end(), next) != workList->end();
         }
-    }; // end of struct HppsBranchRange
+    }; // namespace
 } // end of anonymous namespace
 
 char HppsBranchRange::ID = 0;

@@ -1,0 +1,437 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
+entry to while.cond
++ while.cond (sameRanges=0, wasVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+___No references
+
+@Phi: a.0 (, a.1)
+x1 MISSING
+
+@Phi: k.0 (, add3)
+x1 MISSING
+
+@Cmp
+
+@Br-Complex
+k.0 < 10
+while.body: (-2147483648, 9)
+while.end: (10, 2147483647)
++ while.body (sameRanges=0, wasVisited=0, isUpdated=1)
++ while.end (sameRanges=0, wasVisited=0, isUpdated=1)
+
+
+--- (3) while.body ---
+___k.0(-2147483648, 9)
+
+@Cmp
+
+@Operation
+add = a.0 (-2147483648, 2147483647) | 1 [while.body]
+NEW: add (-2147483648, 2147483647) into while.body
+
+@Operation
+add2 = a.0 (-2147483648, 2147483647) | 10 [while.body]
+NEW: add2 (-2147483648, 2147483647) into while.body
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0 (-2147483648, 9) | 1 [while.body]
+NEW: add3 (-2147483648, 10) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+k.0?
+NEW: k.0 (-2147483648, 9)
+
+add?
+NEW: add (-2147483648, 2147483647)
+
+add2?
+NEW: add2 (-2147483648, 2147483647)
+
+add3?
+NEW: add3 (-2147483648, 10)
++ while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+
+--- (4) while.end ---
+___k.0(10, 2147483647)
+
+
+
+--- (5) while.cond ---
+___k.0(-2147483648, 9)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(-2147483648, 10)
+
+@Phi: a.0 (, a.1)
+x1 MISSING
+
+@Phi: k.0 (, add3)
+New Range: (0, 10)
+
+@Cmp
+
+@Br-Complex
+k.0 < 5
+while.body: (0, 4)
+while.end: (5, 10)
+-k.0: (-2147483648, 9) to (0, 4)
+NEW: k.0 (0, 9) in while.body
+
+-k.0: (10, 2147483647) to (5, 10)
+NEW: k.0 (10, 10) in while.end
+
++ while.body (sameRanges=0, wasVisited=0, isUpdated=1)
++ while.end (sameRanges=0, wasVisited=0, isUpdated=1)
+
+
+--- (6) while.body ---
+___k.0(0, 9)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(-2147483648, 10)
+
+@Cmp
+
+@Operation
+add = a.0 (-2147483648, 2147483647) | 1 [while.body]
+NEW: add (-2147483648, 2147483647) into while.body
+
+@Operation
+add2 = a.0 (-2147483648, 2147483647) | 10 [while.body]
+NEW: add2 (-2147483648, 2147483647) into while.body
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0 (0, 9) | 1 [while.body]
+NEW: add3 (1, 10) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+k.0?
+k.0: while.body (0, 9) != while.cond (0, 10) ?
+NEW! -> (0, 10)
+
+add?
+add: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add2?
+add2: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add3?
+add3: while.body (1, 10) != while.cond (-2147483648, 10) ?
+NEW! -> (1, 10)
++ while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+
+--- (7) while.end ---
+___k.0(10, 10)
+
+
+
+--- (8) while.cond ---
+___k.0(0, 10)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Phi: a.0 (, a.1)
+x1 MISSING
+
+@Phi: k.0 (, add3)
+New Range: (10, 10)
+
+@Cmp
+
+@Br-Complex
+k.0 < 5
+while.body: (10, 4)
+while.end: (10, 10)
+-k.0: (0, 9) to (10, 4)
+NEW: k.0 (0, 9) in while.body
+
+-k.0: (10, 10) to (10, 10)
++ while.body (sameRanges=0, wasVisited=0, isUpdated=1)
+
+
+--- (9) while.body ---
+___k.0(0, 9)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Cmp
+
+@Operation
+add = a.0 (-2147483648, 2147483647) | 1 [while.body]
+NEW: add (-2147483648, 2147483647) into while.body
+
+@Operation
+add2 = a.0 (-2147483648, 2147483647) | 10 [while.body]
+NEW: add2 (-2147483648, 2147483647) into while.body
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0 (0, 9) | 1 [while.body]
+NEW: add3 (1, 10) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+k.0?
+k.0: while.body (0, 9) != while.cond (10, 10) ?
+NEW! -> (10, 10)
+
+add?
+add: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add2?
+add2: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add3?
+add3: while.body (1, 10) != while.cond (1, 10) ?
++ while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+
+--- (10) while.cond ---
+___k.0(10, 10)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Phi: a.0 (, a.1)
+x1 MISSING
+
+@Phi: k.0 (, add3)
+New Range: (10, 10)
+
+@Cmp
+
+@Br-Complex
+k.0 < 5
+while.body: (10, 4)
+while.end: (10, 10)
+-k.0: (0, 9) to (10, 4)
+NEW: k.0 (0, 9) in while.body
+
+-k.0: (10, 10) to (10, 10)
++ while.body (sameRanges=0, wasVisited=0, isUpdated=1)
+
+
+--- (11) while.body ---
+___k.0(0, 9)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Cmp
+
+@Operation
+add = a.0 (-2147483648, 2147483647) | 1 [while.body]
+NEW: add (-2147483648, 2147483647) into while.body
+
+@Operation
+add2 = a.0 (-2147483648, 2147483647) | 10 [while.body]
+NEW: add2 (-2147483648, 2147483647) into while.body
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0 (0, 9) | 1 [while.body]
+NEW: add3 (1, 10) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+k.0?
+k.0: while.body (0, 9) != while.cond (10, 10) ?
+NEW! -> (10, 10)
+
+add?
+add: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add2?
+add2: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add3?
+add3: while.body (1, 10) != while.cond (1, 10) ?
++ while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+
+--- (12) while.cond ---
+___k.0(10, 10)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Phi: a.0 (, a.1)
+x1 MISSING
+
+@Phi: k.0 (, add3)
+New Range: (10, 10)
+
+@Cmp
+
+@Br-Complex
+k.0 < 5
+while.body: (10, 4)
+while.end: (10, 10)
+-k.0: (0, 9) to (10, 4)
+NEW: k.0 (0, 9) in while.body
+
+-k.0: (10, 10) to (10, 10)
++ while.body (sameRanges=0, wasVisited=0, isUpdated=1)
+
+
+--- (13) while.body ---
+___k.0(0, 9)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Cmp
+
+@Operation
+add = a.0 (-2147483648, 2147483647) | 1 [while.body]
+NEW: add (-2147483648, 2147483647) into while.body
+
+@Operation
+add2 = a.0 (-2147483648, 2147483647) | 10 [while.body]
+NEW: add2 (-2147483648, 2147483647) into while.body
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0 (0, 9) | 1 [while.body]
+NEW: add3 (1, 10) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+k.0?
+k.0: while.body (0, 9) != while.cond (10, 10) ?
+NEW! -> (10, 10)
+
+add?
+add: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add2?
+add2: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add3?
+add3: while.body (1, 10) != while.cond (1, 10) ?
++ while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+
+--- (14) while.cond ---
+___k.0(10, 10)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Phi: a.0 (, a.1)
+x1 MISSING
+
+@Phi: k.0 (, add3)
+New Range: (10, 10)
+
+@Cmp
+
+@Br-Complex
+k.0 < 5
+while.body: (10, 4)
+while.end: (10, 10)
+-k.0: (0, 9) to (10, 4)
+NEW: k.0 (0, 9) in while.body
+
+-k.0: (10, 10) to (10, 10)
++ while.body (sameRanges=0, wasVisited=0, isUpdated=1)
+
+
+--- (15) while.body ---
+___k.0(0, 9)
+___add(-2147483648, 2147483647)
+___add2(-2147483648, 2147483647)
+___add3(1, 10)
+
+@Cmp
+
+@Operation
+add = a.0 (-2147483648, 2147483647) | 1 [while.body]
+NEW: add (-2147483648, 2147483647) into while.body
+
+@Operation
+add2 = a.0 (-2147483648, 2147483647) | 10 [while.body]
+NEW: add2 (-2147483648, 2147483647) into while.body
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0 (0, 9) | 1 [while.body]
+NEW: add3 (1, 10) into while.body
+
+@Br-Simple
+while.body to while.cond
+
+k.0?
+k.0: while.body (0, 9) != while.cond (10, 10) ?
+NEW! -> (10, 10)
+
+add?
+add: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add2?
+add2: while.body (-2147483648, 2147483647) != while.cond (-2147483648, 2147483647) ?
+
+add3?
+add3: while.body (1, 10) != while.cond (1, 10) ?
++ while.cond (sameRanges=1, wasVisited=0, isUpdated=0)
+
+--- (MAX ITERATIONS LIMIT) ---
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   k.0(10, 10) = 1 is 2bits
+   add(-2147483648, 2147483647) = 2 is 2bits
+   add2(-2147483648, 2147483647) = 2 is 2bits
+   add3(1, 10) = 10 is 5bits
+
+BB: while.body
+   k.0(0, 9) = 10 is 5bits
+   add(-2147483648, 2147483647) = 2 is 2bits
+   add2(-2147483648, 2147483647) = 2 is 2bits
+   add3(1, 10) = 10 is 5bits
+
+BB: while.end
+   k.0(10, 10) = 1 is 2bits
