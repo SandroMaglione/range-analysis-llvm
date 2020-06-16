@@ -4,6 +4,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Argument.h"
+#include "llvm/IR/CFG.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
@@ -70,6 +71,12 @@ namespace
                 BasicBlock *BB = workList.at(0);
                 workList.erase(workList.begin());
                 errs() << "\n--- (" << iterLoops << ") " << BB->getName() << " ---\n";
+
+                // --- PRINT ALL PREDECESSORS --- //
+                for (BasicBlock *Pred : predecessors(BB))
+                {
+                    errs() << "..." << Pred->getName() << "\n";
+                }
 
                 // --- PRINT CURRENT VALUE RANGES INSIDE BLOCK --- //
                 if (isAlreadyVisited(BB, &listRange))
@@ -377,6 +384,9 @@ namespace
                         BasicBlock *BB0 = phiInst->getIncomingBlock(0);
                         BasicBlock *BB1 = phiInst->getIncomingBlock(1);
 
+                        int search0 = searchInBasicBlock(phiInst, BB0, operand0);
+                        int search1 = searchInBasicBlock(phiInst, BB1, operand1);
+
                         // Range of the phi variable in current basic block
                         std::map<Value *, std::pair<int, int>>::iterator valRefSource = getValueReference(BB, phiInst, &listRange, infMin, infMax);
                         std::pair<int, int> phiPair(infMin, infMax);
@@ -408,6 +418,21 @@ namespace
                                    << valRef->first->getName() << printRange(valRef->second, infMin, infMax) << "\n";
 
                             phiPair = phiOpe(valRefSource->second, constPair, valRef->second);
+
+                            // Check if the constant operand is the minimum or maximum value
+                            if (ConstantInt *CI = dyn_cast<ConstantInt>(operand0))
+                            {
+                                int constRangeVal = CI->getZExtValue();
+
+                                if (search1 == 1)
+                                {
+                                    phiPair.first = constRangeVal;
+                                }
+                                else if (search1 == 2)
+                                {
+                                    phiPair.second = constRangeVal;
+                                }
+                            }
                         }
                         // Operator0 is known reference, Operator1 is constant
                         else if (!operand1->hasName() && operand0->hasName())
@@ -421,6 +446,21 @@ namespace
                                    << printRange(constPair, infMin, infMax) << "\n";
 
                             phiPair = phiOpe(valRefSource->second, valRef->second, constPair);
+
+                            // Check if the constant operand is the minimum or maximum value
+                            if (ConstantInt *CI = dyn_cast<ConstantInt>(operand1))
+                            {
+                                int constRangeVal = CI->getZExtValue();
+
+                                if (search0 == 1)
+                                {
+                                    phiPair.first = constRangeVal;
+                                }
+                                else if (search0 == 2)
+                                {
+                                    phiPair.second = constRangeVal;
+                                }
+                            }
                         }
                         // Both integers
                         else if (!operand0->hasName() && !operand1->hasName())
@@ -464,6 +504,80 @@ namespace
             }
 
             return false;
+        }
+
+        // 1: The value is found and always grows higher
+        // 2: The value is found and always grows smaller
+        int searchInBasicBlock(Value *inst, BasicBlock *BB, Value *operand)
+        {
+            bool isSum = false, isSub = false, isFound = false;
+
+            for (BasicBlock::InstListType::iterator subIt =
+                     BB->getInstList().begin();
+                 subIt != BB->getInstList().end(); ++subIt)
+            {
+                Instruction *subI = &*subIt;
+                if (auto *operInst = dyn_cast<BinaryOperator>(subI))
+                {
+                    if (operInst->getName() == operand->getName())
+                    {
+                        Value *oper0 = operInst->getOperand(0);
+                        Value *oper1 = operInst->getOperand(1);
+                        unsigned operCode = operInst->getOpcode();
+
+                        if (oper0->getName() == inst->getName())
+                        {
+                            if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+                            {
+                                int constVal = CI->getZExtValue();
+                                // a = a + 1 || a - (-1) -> Always growing
+                                if ((operCode == Instruction::Add && constVal >= 0) || (operCode == Instruction::Sub && constVal <= 0))
+                                {
+                                    isSum = true;
+                                    isFound = true;
+                                }
+                                // a = a + (-1) || a - 1 -> Always smaller
+                                else if ((operCode == Instruction::Add && constVal <= 0) || (operCode == Instruction::Sub && constVal >= 0))
+                                {
+                                    isSub = true;
+                                    isFound = true;
+                                }
+                            }
+                        }
+                        else if (oper1->getName() == inst->getName())
+                            if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+                            {
+                                int constVal = CI->getZExtValue();
+                                // a = a + 1 || a - (-1) -> Always growing
+                                if ((operCode == Instruction::Add && constVal >= 0) || (operCode == Instruction::Sub && constVal <= 0))
+                                {
+                                    isSum = true;
+                                    isFound = true;
+                                }
+                                // a = a + (-1) || a - 1 -> Always smaller
+                                else if ((operCode == Instruction::Add && constVal <= 0) || (operCode == Instruction::Sub && constVal >= 0))
+                                {
+                                    isSub = true;
+                                    isFound = true;
+                                }
+                            }
+                        {
+                        }
+                    }
+                }
+            }
+
+            // Found, but only sum xor sub
+            if (isFound && isSum && !isSub)
+            {
+                return 1;
+            }
+            else if (isFound && !isSum && isSub)
+            {
+                return 2;
+            }
+
+            return 0;
         }
 
         // If basic block not already visited and not already inside workList, insert it in workList
