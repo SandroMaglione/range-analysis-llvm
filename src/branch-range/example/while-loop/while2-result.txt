@@ -1,0 +1,135 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ while.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+...while.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], add [while.body])
+add(-Inf, +Inf) (-10, -10) add(-Inf, +Inf)
+NEW: a.0(-10, +Inf) in while.cond
+
+@Phi: k.0 ([entry], sub [while.body])
+sub(-Inf, +Inf) (40, 40) sub(-Inf, +Inf)
+NEW: k.0(-Inf, 40) in while.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+k.0 > 10
+k.0(-Inf, 40) k.0(-Inf, +Inf) (11, +Inf)
+k.0(-Inf, 40) k.0(-Inf, +Inf) (-Inf, 10)
+while.body: (11, 40)
+while.end: (-Inf, 10)
+
++ while.body (notVisited=1, isUpdated=1)
++ while.end (notVisited=1, isUpdated=1)
+NEW: k.0(11, 40) in while.body
+NEW: k.0(-Inf, 10) in while.end
+
+
+--- (3) while.body ---
+...while.cond
+___k.0(11, 40)
+
+@Operation
+add = a.0(-Inf, +Inf) | 1 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+sub = k.0(11, 40) | 2 [while.body]
+NEW: sub(9, 38)
+
+@Br-Simple
+LOOP on while.cond
++ while.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) while.end ---
+...while.cond
+___k.0(-Inf, 10)
+
+
+
+--- (5) while.cond ---
+...while.body
+...entry
+___a.0(-10, +Inf)
+___k.0(-Inf, 40)
+
+@Phi: a.0 ([entry], add [while.body])
+a.0(-10, +Inf) (-10, -10) add(-Inf, +Inf)
+k.0 > 10
+Tripcount 30
+Sum -10 on 1 for 30
+=20
+UPDATE: a.0(-10, 20) in while.cond
+
+@Phi: k.0 ([entry], sub [while.body])
+k.0(-Inf, 40) (40, 40) sub(9, 38)
+k.0 > 10
+UPDATE: k.0(9, 40) in while.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+k.0 > 10
+k.0(9, 40) k.0(11, 40) (11, +Inf)
+k.0(9, 40) k.0(-Inf, 10) (-Inf, 10)
+while.body: (11, 40)
+while.end: (9, 10)
+
++ while.body (notVisited=0, isUpdated=1)
++ while.end (notVisited=0, isUpdated=1)
+UPDATE: k.0(11, 40) in while.body
+UPDATE: k.0(9, 10) in while.end
+
+
+--- (6) while.body ---
+...while.cond
+___k.0(11, 40)
+___add(-Inf, +Inf)
+___sub(9, 38)
+
+@Operation
+add = a.0(-Inf, +Inf) | 1 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+sub = k.0(11, 40) | 2 [while.body]
+NEW: sub(9, 38)
+
+@Br-Simple
+LOOP on while.cond
+
+
+--- (7) while.end ---
+...while.cond
+___k.0(9, 10)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   a.0(-10, 20) = 31 {6bit}
+   k.0(9, 40) = 32 {6bit}
+
+BB: while.body
+   k.0(11, 40) = 30 {6bit}
+   add(-Inf, +Inf) = MAX
+   sub(9, 38) = 30 {6bit}
+
+BB: while.end
+   k.0(9, 10) = 2 {2bit}

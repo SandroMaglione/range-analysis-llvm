@@ -1,0 +1,135 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ while.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+...while.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], add [while.body])
+add(-Inf, +Inf) (1, 1) add(-Inf, +Inf)
+NEW: a.0(1, +Inf) in while.cond
+
+@Phi: k.0 ([entry], add1 [while.body])
+add1(-Inf, +Inf) (0, 0) add1(-Inf, +Inf)
+NEW: k.0(0, +Inf) in while.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 20
+k.0(0, +Inf) k.0(-Inf, +Inf) (-Inf, 19)
+k.0(0, +Inf) k.0(-Inf, +Inf) (20, +Inf)
+while.body: (0, 19)
+while.end: (20, +Inf)
+
++ while.body (notVisited=1, isUpdated=1)
++ while.end (notVisited=1, isUpdated=1)
+NEW: k.0(0, 19) in while.body
+NEW: k.0(20, +Inf) in while.end
+
+
+--- (3) while.body ---
+...while.cond
+___k.0(0, 19)
+
+@Operation
+add = a.0(-Inf, +Inf) | 3 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+add1 = k.0(0, 19) | 1 [while.body]
+NEW: add1(1, 20)
+
+@Br-Simple
+LOOP on while.cond
++ while.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) while.end ---
+...while.cond
+___k.0(20, +Inf)
+
+
+
+--- (5) while.cond ---
+...while.body
+...entry
+___a.0(1, +Inf)
+___k.0(0, +Inf)
+
+@Phi: a.0 ([entry], add [while.body])
+a.0(1, +Inf) (1, 1) add(-Inf, +Inf)
+k.0 < 20
+Tripcount 20
+Sum 1 on 3 for 20
+=61
+UPDATE: a.0(1, 61) in while.cond
+
+@Phi: k.0 ([entry], add1 [while.body])
+k.0(0, +Inf) (0, 0) add1(1, 20)
+k.0 < 20
+UPDATE: k.0(0, 20) in while.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 20
+k.0(0, 20) k.0(0, 19) (-Inf, 19)
+k.0(0, 20) k.0(20, +Inf) (20, +Inf)
+while.body: (0, 19)
+while.end: (20, 20)
+
++ while.body (notVisited=0, isUpdated=1)
++ while.end (notVisited=0, isUpdated=1)
+UPDATE: k.0(0, 19) in while.body
+UPDATE: k.0(20, 20) in while.end
+
+
+--- (6) while.body ---
+...while.cond
+___k.0(0, 19)
+___add(-Inf, +Inf)
+___add1(1, 20)
+
+@Operation
+add = a.0(-Inf, +Inf) | 3 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+add1 = k.0(0, 19) | 1 [while.body]
+NEW: add1(1, 20)
+
+@Br-Simple
+LOOP on while.cond
+
+
+--- (7) while.end ---
+...while.cond
+___k.0(20, 20)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   a.0(1, 61) = 61 {7bit}
+   k.0(0, 20) = 21 {6bit}
+
+BB: while.body
+   k.0(0, 19) = 20 {6bit}
+   add(-Inf, +Inf) = MAX
+   add1(1, 20) = 20 {6bit}
+
+BB: while.end
+   k.0(20, 20) = 1 {2bit}

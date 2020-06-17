@@ -1,0 +1,135 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ for.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) for.cond ---
+...for.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], sub [for.body])
+sub(-Inf, +Inf) (0, 0) sub(-Inf, +Inf)
+NEW: a.0(-Inf, 0) in for.cond
+
+@Phi: j.0 ([entry], dec [for.body])
+dec(-Inf, +Inf) (10, 10) dec(-Inf, +Inf)
+NEW: j.0(-Inf, 10) in for.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+j.0 > 0
+j.0(-Inf, 10) j.0(-Inf, +Inf) (1, +Inf)
+j.0(-Inf, 10) j.0(-Inf, +Inf) (-Inf, 0)
+for.body: (1, 10)
+for.end: (-Inf, 0)
+
++ for.body (notVisited=1, isUpdated=1)
++ for.end (notVisited=1, isUpdated=1)
+NEW: j.0(1, 10) in for.body
+NEW: j.0(-Inf, 0) in for.end
+
+
+--- (3) for.body ---
+...for.cond
+___j.0(1, 10)
+
+@Operation
+sub = a.0(-Inf, +Inf) | 5 [for.body]
+NEW: sub(-Inf, +Inf)
+
+@Operation
+dec = j.0(1, 10) | -1 [for.body]
+NEW: dec(0, 9)
+
+@Br-Simple
+LOOP on for.cond
++ for.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) for.end ---
+...for.cond
+___j.0(-Inf, 0)
+
+
+
+--- (5) for.cond ---
+...for.body
+...entry
+___a.0(-Inf, 0)
+___j.0(-Inf, 10)
+
+@Phi: a.0 ([entry], sub [for.body])
+a.0(-Inf, 0) (0, 0) sub(-Inf, +Inf)
+j.0 > 0
+Tripcount 10
+Sum 0 on 5 for 10
+=-50
+UPDATE: a.0(-50, 0) in for.cond
+
+@Phi: j.0 ([entry], dec [for.body])
+j.0(-Inf, 10) (10, 10) dec(0, 9)
+j.0 > 0
+UPDATE: j.0(0, 10) in for.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+j.0 > 0
+j.0(0, 10) j.0(1, 10) (1, +Inf)
+j.0(0, 10) j.0(-Inf, 0) (-Inf, 0)
+for.body: (1, 10)
+for.end: (0, 0)
+
++ for.body (notVisited=0, isUpdated=1)
++ for.end (notVisited=0, isUpdated=1)
+UPDATE: j.0(1, 10) in for.body
+UPDATE: j.0(0, 0) in for.end
+
+
+--- (6) for.body ---
+...for.cond
+___j.0(1, 10)
+___sub(-Inf, +Inf)
+___dec(0, 9)
+
+@Operation
+sub = a.0(-Inf, +Inf) | 5 [for.body]
+NEW: sub(-Inf, +Inf)
+
+@Operation
+dec = j.0(1, 10) | -1 [for.body]
+NEW: dec(0, 9)
+
+@Br-Simple
+LOOP on for.cond
+
+
+--- (7) for.end ---
+...for.cond
+___j.0(0, 0)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   a.0(-50, 0) = 51 {7bit}
+   j.0(0, 10) = 11 {5bit}
+
+BB: for.body
+   j.0(1, 10) = 10 {5bit}
+   sub(-Inf, +Inf) = MAX
+   dec(0, 9) = 10 {5bit}
+
+BB: for.end
+   j.0(0, 0) = 1 {2bit}

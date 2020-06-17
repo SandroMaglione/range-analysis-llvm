@@ -1,0 +1,291 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ while.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+...for.end
+...entry
+___No references
+
+@Phi: a.0 ([entry], a.1 [for.end])
+a.1(-Inf, +Inf) (5, 5) a.1(-Inf, +Inf)
+NEW: a.0(-Inf, +Inf) in while.cond
+
+@Phi: k.0 ([entry], add2 [for.end])
+add2(-Inf, +Inf) (5, 5) add2(-Inf, +Inf)
+NEW: k.0(5, +Inf) in while.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 20
+k.0(5, +Inf) k.0(-Inf, +Inf) (-Inf, 19)
+k.0(5, +Inf) k.0(-Inf, +Inf) (20, +Inf)
+for.cond: (5, 19)
+while.end: (20, +Inf)
+
++ for.cond (notVisited=1, isUpdated=1)
++ while.end (notVisited=1, isUpdated=1)
+NEW: k.0(5, 19) in for.cond
+NEW: k.0(20, +Inf) in while.end
+
+
+--- (3) for.cond ---
+...for.body
+...while.cond
+___k.0(5, 19)
+
+@Phi: j.0 (inc[for.body],  [while.cond])
+inc(-Inf, +Inf) inc(-Inf, +Inf) (-10, -10)
+NEW: j.0(-10, +Inf) in for.cond
+
+@Phi: a.1 (add[for.body], a.0 [while.cond])
+add(-Inf, +Inf) add(-Inf, +Inf) a.0(-Inf, +Inf)
+NEW: a.1(-Inf, +Inf) in for.cond
+
+@Cmp
+NEW: cmp1
+
+
+@Br-Complex
+Condition: cmp1
+
+j.0 < 0
+j.0(-10, +Inf) j.0(-Inf, +Inf) (-Inf, -1)
+j.0(-10, +Inf) j.0(-Inf, +Inf) (0, +Inf)
+for.body: (-10, -1)
+for.end: (0, +Inf)
+
++ for.body (notVisited=1, isUpdated=1)
++ for.end (notVisited=1, isUpdated=1)
+NEW: j.0(-10, -1) in for.body
+NEW: j.0(0, +Inf) in for.end
+
+
+--- (4) while.end ---
+...while.cond
+___k.0(20, +Inf)
+
+
+
+--- (5) for.body ---
+...for.cond
+___j.0(-10, -1)
+
+@Operation
+add = a.1(-Inf, +Inf) | 3 [for.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j.0(-10, -1) | 1 [for.body]
+NEW: inc(-9, 0)
+
+@Br-Simple
+LOOP on for.cond
++ for.cond (notVisited=0, isUpdated=1)
+
+
+--- (6) for.end ---
+...for.cond
+___j.0(0, +Inf)
+
+@Operation
+add2 = k.0(-Inf, +Inf) | 1 [for.end]
+NEW: add2(-Inf, +Inf)
+
+@Br-Simple
++ while.cond (notVisited=0, isUpdated=1)
+
+
+--- (7) for.cond ---
+...for.body
+...while.cond
+___k.0(5, 19)
+___j.0(-10, +Inf)
+___a.1(-Inf, +Inf)
+
+@Phi: j.0 (inc[for.body],  [while.cond])
+j.0(-10, +Inf) inc(-9, 0) (-10, -10)
+j.0 < 0
+UPDATE: j.0(-10, 0) in for.cond
+
+@Phi: a.1 (add[for.body], a.0 [while.cond])
+a.1(-Inf, +Inf) add(-Inf, +Inf) a.0(-Inf, +Inf)
+UPDATE: a.1(-Inf, +Inf) in for.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp1
+
+j.0 < 0
+j.0(-10, 0) j.0(-10, -1) (-Inf, -1)
+j.0(-10, 0) j.0(0, +Inf) (0, +Inf)
+for.body: (-10, -1)
+for.end: (0, 0)
+
++ for.body (notVisited=0, isUpdated=1)
++ for.end (notVisited=0, isUpdated=1)
+UPDATE: j.0(-10, -1) in for.body
+UPDATE: j.0(0, 0) in for.end
+
+
+--- (8) while.cond ---
+...for.end
+...entry
+___a.0(-Inf, +Inf)
+___k.0(5, +Inf)
+
+@Phi: a.0 ([entry], a.1 [for.end])
+a.0(-Inf, +Inf) (5, 5) a.1(-Inf, +Inf)
+UPDATE: a.0(-Inf, +Inf) in while.cond
+
+@Phi: k.0 ([entry], add2 [for.end])
+k.0(5, +Inf) (5, 5) add2(-Inf, +Inf)
+UPDATE: k.0(5, +Inf) in while.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 20
+k.0(5, +Inf) k.0(5, 19) (-Inf, 19)
+k.0(5, +Inf) k.0(20, +Inf) (20, +Inf)
+for.cond: (5, 19)
+while.end: (20, +Inf)
+
++ for.cond (notVisited=0, isUpdated=1)
++ while.end (notVisited=0, isUpdated=1)
+UPDATE: k.0(5, 19) in for.cond
+UPDATE: k.0(20, +Inf) in while.end
+
+
+--- (9) for.body ---
+...for.cond
+___inc(-9, 0)
+___j.0(-10, -1)
+___add(-Inf, +Inf)
+
+@Operation
+add = a.1(-Inf, +Inf) | 3 [for.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j.0(-10, -1) | 1 [for.body]
+NEW: inc(-9, 0)
+
+@Br-Simple
+LOOP on for.cond
+
+
+--- (10) for.end ---
+...for.cond
+___add2(-Inf, +Inf)
+___j.0(0, 0)
+
+@Operation
+add2 = k.0(-Inf, +Inf) | 1 [for.end]
+NEW: add2(-Inf, +Inf)
+
+@Br-Simple
+
+
+--- (11) for.cond ---
+...for.body
+...while.cond
+___k.0(5, 19)
+___j.0(-10, 0)
+___a.1(-Inf, +Inf)
+
+@Phi: j.0 (inc[for.body],  [while.cond])
+j.0(-10, 0) inc(-9, 0) (-10, -10)
+j.0 < 0
+UPDATE: j.0(-10, 0) in for.cond
+
+@Phi: a.1 (add[for.body], a.0 [while.cond])
+a.1(-Inf, +Inf) add(-Inf, +Inf) a.0(-Inf, +Inf)
+UPDATE: a.1(-Inf, +Inf) in for.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp1
+
+j.0 < 0
+j.0(-10, 0) j.0(-10, -1) (-Inf, -1)
+j.0(-10, 0) j.0(0, 0) (0, +Inf)
+for.body: (-10, -1)
+for.end: (0, 0)
+
++ for.body (notVisited=0, isUpdated=1)
++ for.end (notVisited=0, isUpdated=1)
+UPDATE: j.0(-10, -1) in for.body
+UPDATE: j.0(0, 0) in for.end
+
+
+--- (12) while.end ---
+...while.cond
+___k.0(20, +Inf)
+
+
+
+--- (13) for.body ---
+...for.cond
+___inc(-9, 0)
+___j.0(-10, -1)
+___add(-Inf, +Inf)
+
+@Operation
+add = a.1(-Inf, +Inf) | 3 [for.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j.0(-10, -1) | 1 [for.body]
+NEW: inc(-9, 0)
+
+@Br-Simple
+LOOP on for.cond
+
+
+--- (14) for.end ---
+...for.cond
+___add2(-Inf, +Inf)
+___j.0(0, 0)
+
+@Operation
+add2 = k.0(-Inf, +Inf) | 1 [for.end]
+NEW: add2(-Inf, +Inf)
+
+@Br-Simple
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   a.0(-Inf, +Inf) = MAX
+   k.0(5, +Inf) = MAX
+
+BB: for.end
+   add2(-Inf, +Inf) = MAX
+   j.0(0, 0) = 1 {2bit}
+
+BB: for.cond
+   k.0(5, 19) = 15 {5bit}
+   j.0(-10, 0) = 11 {5bit}
+   a.1(-Inf, +Inf) = MAX
+
+BB: while.end
+   k.0(20, +Inf) = MAX
+
+BB: for.body
+   inc(-9, 0) = 10 {5bit}
+   j.0(-10, -1) = 10 {5bit}
+   add(-Inf, +Inf) = MAX

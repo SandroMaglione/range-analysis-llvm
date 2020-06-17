@@ -131,13 +131,9 @@ namespace
                         for (unsigned args = 0; args < callInst->getNumArgOperands(); ++args)
                         {
                             Value *argOper = callInst->getArgOperand(args);
-                            if (ConstantInt *CI = dyn_cast<ConstantInt>(argOper))
+                            if (argOper->hasName())
                             {
-                                errs() << "Arg" << args << ": " << CI->getZExtValue() << " (CONST)\n";
-                            }
-                            else
-                            {
-                                errs() << "Arg" << args << ": " << argOper->getName() << " (REF)\n";
+                                errs() << "Unknown range on " << argOper->getName() << "(" << args << ")\n";
                             }
                         }
                     }
@@ -289,6 +285,15 @@ namespace
                         {
                             errs() << "@Br-Simple\n";
                             BasicBlock *succ = brInst->getSuccessor(0);
+
+                            for (BasicBlock *Pred : predecessors(BB))
+                            {
+                                if (Pred == succ)
+                                {
+                                    errs() << "LOOP on " << Pred->getName() << "\n";
+                                }
+                            }
+
                             applySimpleBr(hasBeenUpdated, succ, &listRange, &workList, emptyMap);
                         }
                         else
@@ -427,10 +432,12 @@ namespace
                                 if (search1 == 1)
                                 {
                                     phiPair.first = constRangeVal;
+                                    maxTripcount(&phiPair, constRangeVal, phiInst, BB1, operand1, &mapCmp, &listRange, infMin, infMax);
                                 }
                                 else if (search1 == 2)
                                 {
                                     phiPair.second = constRangeVal;
+                                    maxTripcount(&phiPair, constRangeVal, phiInst, BB1, operand1, &mapCmp, &listRange, infMin, infMax);
                                 }
                             }
                         }
@@ -455,10 +462,12 @@ namespace
                                 if (search0 == 1)
                                 {
                                     phiPair.first = constRangeVal;
+                                    maxTripcount(&phiPair, constRangeVal, phiInst, BB0, operand0, &mapCmp, &listRange, infMin, infMax);
                                 }
                                 else if (search0 == 2)
                                 {
                                     phiPair.second = constRangeVal;
+                                    maxTripcount(&phiPair, constRangeVal, phiInst, BB0, operand0, &mapCmp, &listRange, infMin, infMax);
                                 }
                             }
                         }
@@ -474,7 +483,10 @@ namespace
                         }
 
                         // Update/Insert new phi range to the value in the current basic block
-                        updateValueReference(BB, phiInst, phiPair, &listRange, infMin, infMax);
+                        if (phiInst->hasName())
+                        {
+                            updateValueReference(BB, phiInst, phiPair, &listRange, infMin, infMax);
+                        }
                     }
 
                     errs() << "\n";
@@ -497,13 +509,190 @@ namespace
                     std::map<Value *, std::pair<int, int>>::iterator pairBB = listBB.begin();
                     int intRange = pairBB->second.first == infMin || pairBB->second.second == infMax ? infMax : std::abs(pairBB->second.second - pairBB->second.first) + 1;
                     int numOfBit = intRange == infMax ? 32 : std::ceil(intRange <= 2 ? 1 : std::log2(intRange)) + 1;
-                    errs() << "   " << pairBB->first->getName() << printRange(pairBB->second, infMin, infMax) << " = " << intRange << " {" << numOfBit << "bit}\n";
+                    errs() << "   " << pairBB->first->getName() << printRange(pairBB->second, infMin, infMax) << " = ";
+
+                    if (pairBB->second.first != infMin && pairBB->second.second != infMax)
+                    {
+                        errs() << intRange << " {" << numOfBit << "bit}\n";
+                    }
+                    else
+                    {
+                        errs() << "MAX\n";
+                    }
                     listBB.erase(listBB.begin());
                 }
                 errs() << "\n";
             }
 
             return false;
+        }
+
+        // Compute and update maximum range of value add/sub in a loop
+        void maxTripcount(std::pair<int, int> *tripPair, int baseVal, Value *inst, BasicBlock *BB, Value *operand, std::map<Value *, CmpInst *> *mapCmp, std::map<BasicBlock *, std::map<Value *, std::pair<int, int>>> *listRange, int infMin, int infMax)
+        {
+            int tripcount = -1;
+
+            for (BasicBlock::InstListType::iterator loopIt =
+                     BB->getInstList().begin();
+                 loopIt != BB->getInstList().end(); ++loopIt)
+            {
+                Instruction *loopI = &*loopIt;
+
+                // Search br instruction, if successor is same as predcessor, then is a loop
+                if (auto *brInst = dyn_cast<BranchInst>(loopI))
+                {
+                    if (brInst->isUnconditional())
+                    {
+                        BasicBlock *succ = brInst->getSuccessor(0);
+                        for (BasicBlock *Pred : predecessors(BB))
+                        {
+                            // Successor same as predecessor
+                            if (Pred == succ)
+                            {
+                                for (BasicBlock::InstListType::iterator subIt =
+                                         succ->getInstList().begin();
+                                     subIt != succ->getInstList().end(); ++subIt)
+                                {
+                                    Instruction *subI = &*subIt;
+
+                                    if (auto *brInst = dyn_cast<BranchInst>(subI))
+                                    {
+                                        if (!(brInst->isUnconditional()))
+                                        {
+                                            // Successor basic blocks (taken and not taken)
+                                            BasicBlock *succ0 = brInst->getSuccessor(0);
+                                            // BasicBlock *succ1 = brInst->getSuccessor(1);
+
+                                            // Get previous cmp values
+                                            CmpInst *cmpInst = mapCmp->find(brInst->getCondition())->second;
+                                            ICmpInst::Predicate pred = cmpInst->getPredicate();
+                                            Value *oper0 = cmpInst->getOperand(0);
+                                            Value *oper1 = cmpInst->getOperand(1);
+
+                                            // Default new range pairs and value
+                                            // VAL1: Range of the cmp instruction for branch taken
+                                            std::pair<int, int> rangeCmpTaken(infMin, infMax);
+                                            std::pair<int, int> rangeCmpNotTaken(infMin, infMax);
+                                            Value *oper = oper0;
+
+                                            // a < b
+                                            if (oper0->hasName() && oper1->hasName())
+                                            {
+                                                errs() << "\n\nUNEXPECTED DOUBLE REFERENCE CMP INSTRUCTION\n\n";
+                                            }
+                                            // a < 1
+                                            else if (oper0->hasName())
+                                            {
+                                                // Select reference to operand0
+                                                oper = oper0;
+
+                                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+                                                {
+                                                    // Change range of successors based on reference, constant value, and predicate
+                                                    computeCmpRange(true, pred, oper, CI->getZExtValue(), &rangeCmpTaken, &rangeCmpNotTaken);
+                                                }
+                                            }
+                                            // 1 < a
+                                            else
+                                            {
+                                                // Select reference to operand0
+                                                oper = oper1;
+
+                                                if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+                                                {
+                                                    // Change range of successors based on reference, constant value, and predicate
+                                                    computeCmpRange(false, pred, oper, CI->getZExtValue(), &rangeCmpTaken, &rangeCmpNotTaken);
+                                                }
+                                            }
+
+                                            // VAL3: Range in current basic block of the variable in the cmp instruction
+                                            std::map<Value *, std::pair<int, int>>::iterator valRefSource = getValueReference(BB, oper, listRange, infMin, infMax);
+                                            // VAL4: Range in taken basic block of the variable in the cmp instruction
+                                            std::map<Value *, std::pair<int, int>>::iterator valBranchTaken = getValueReference(succ0, oper, listRange, infMin, infMax);
+
+                                            // Final computed branch ranges
+                                            std::pair<int, int> rangeBranchTaken = brOpe(valRefSource->second, valBranchTaken->second, rangeCmpTaken);
+                                            if (oper != inst && rangeBranchTaken.first != infMin && rangeBranchTaken.second != infMax)
+                                            {
+                                                tripcount = std::abs(rangeBranchTaken.second - rangeBranchTaken.first) + 1;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Search add/sub instruction
+                                if (tripcount != -1)
+                                {
+                                    errs() << "Tripcount " << tripcount << "\n";
+                                    for (BasicBlock::InstListType::iterator subIt =
+                                             BB->getInstList().begin();
+                                         subIt != BB->getInstList().end(); ++subIt)
+                                    {
+                                        Instruction *subI = &*subIt;
+                                        if (auto *operInst = dyn_cast<BinaryOperator>(subI))
+                                        {
+                                            // Add/Sub in which the result is the operand in the phi instruction
+                                            if (operInst->getName() == operand->getName())
+                                            {
+                                                Value *oper0 = operInst->getOperand(0);
+                                                Value *oper1 = operInst->getOperand(1);
+                                                unsigned operCode = operInst->getOpcode();
+
+                                                if (oper0->getName() == inst->getName())
+                                                {
+                                                    if (ConstantInt *CI = dyn_cast<ConstantInt>(oper1))
+                                                    {
+                                                        int constVal = CI->getZExtValue();
+                                                        // a = a + 1 || a - (-1) -> Always growing
+                                                        if ((operCode == Instruction::Add && constVal >= 0) || (operCode == Instruction::Sub && constVal <= 0))
+                                                        {
+                                                            errs() << "Sum " << baseVal << " on " << constVal << " for " << tripcount << "\n";
+                                                            errs() << "=" << ((constVal * tripcount) + baseVal) << "\n";
+                                                            tripPair->first = baseVal;
+                                                            tripPair->second = ((constVal * tripcount) + baseVal);
+                                                        }
+                                                        // a = a + (-1) || a - 1 -> Always smaller
+                                                        else if ((operCode == Instruction::Add && constVal <= 0) || (operCode == Instruction::Sub && constVal >= 0))
+                                                        {
+                                                            errs() << "Sum " << baseVal << " on " << constVal << " for " << tripcount << "\n";
+                                                            errs() << "=" << ((-constVal * tripcount) + baseVal) << "\n";
+                                                            tripPair->first = ((-constVal * tripcount) + baseVal);
+                                                            tripPair->second = baseVal;
+                                                        }
+                                                    }
+                                                }
+                                                else if (oper1->getName() == inst->getName())
+                                                {
+                                                    if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
+                                                    {
+                                                        int constVal = CI->getZExtValue();
+                                                        // a = a + 1 || a - (-1) -> Always growing
+                                                        if ((operCode == Instruction::Add && constVal >= 0) || (operCode == Instruction::Sub && constVal <= 0))
+                                                        {
+                                                            errs() << "Sum " << baseVal << " on " << constVal << " for " << tripcount << "\n";
+                                                            errs() << "=" << ((constVal * tripcount) + baseVal) << "\n";
+                                                            tripPair->first = baseVal;
+                                                            tripPair->second = ((constVal * tripcount) + baseVal);
+                                                        }
+                                                        // a = a + (-1) || a - 1 -> Always smaller
+                                                        else if ((operCode == Instruction::Add && constVal <= 0) || (operCode == Instruction::Sub && constVal >= 0))
+                                                        {
+                                                            errs() << "Sum " << baseVal << " on " << constVal << " for " << tripcount << "\n";
+                                                            errs() << "=" << ((-constVal * tripcount) + baseVal) << "\n";
+                                                            tripPair->first = ((-constVal * tripcount) + baseVal);
+                                                            tripPair->second = baseVal;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 1: The value is found and always grows higher
@@ -545,6 +734,7 @@ namespace
                             }
                         }
                         else if (oper1->getName() == inst->getName())
+                        {
                             if (ConstantInt *CI = dyn_cast<ConstantInt>(oper0))
                             {
                                 int constVal = CI->getZExtValue();
@@ -561,7 +751,6 @@ namespace
                                     isFound = true;
                                 }
                             }
-                        {
                         }
                     }
                 }
@@ -831,10 +1020,21 @@ namespace
         {
             std::string valString = "(";
 
-            valString += rangeVal.first == infMin ? "-Inf" : std::to_string(rangeVal.first);
-            valString += ", ";
-            valString += rangeVal.second == infMax ? "+Inf" : std::to_string(rangeVal.second);
-            valString += ")";
+            if (rangeVal.first <= rangeVal.second)
+            {
+                valString += rangeVal.first == infMin ? "-Inf" : std::to_string(rangeVal.first);
+                valString += ", ";
+                valString += rangeVal.second == infMax ? "+Inf" : std::to_string(rangeVal.second);
+                valString += ")";
+            }
+            else
+            {
+                valString += rangeVal.second == infMax ? "+Inf" : std::to_string(rangeVal.second);
+                valString += ", ";
+                valString += rangeVal.first == infMin ? "-Inf" : std::to_string(rangeVal.first);
+                valString += ")";
+            }
+
             return valString;
         }
     }; // namespace

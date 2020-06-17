@@ -1,0 +1,135 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ for.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) for.cond ---
+...for.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], add [for.body])
+add(-Inf, +Inf) (1, 1) add(-Inf, +Inf)
+NEW: a.0(1, +Inf) in for.cond
+
+@Phi: j.0 ([entry], inc [for.body])
+inc(-Inf, +Inf) (10, 10) inc(-Inf, +Inf)
+NEW: j.0(10, +Inf) in for.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+j.0 < 30
+j.0(10, +Inf) j.0(-Inf, +Inf) (-Inf, 29)
+j.0(10, +Inf) j.0(-Inf, +Inf) (30, +Inf)
+for.body: (10, 29)
+for.end: (30, +Inf)
+
++ for.body (notVisited=1, isUpdated=1)
++ for.end (notVisited=1, isUpdated=1)
+NEW: j.0(10, 29) in for.body
+NEW: j.0(30, +Inf) in for.end
+
+
+--- (3) for.body ---
+...for.cond
+___j.0(10, 29)
+
+@Operation
+add = a.0(-Inf, +Inf) | 10 [for.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j.0(10, 29) | 1 [for.body]
+NEW: inc(11, 30)
+
+@Br-Simple
+LOOP on for.cond
++ for.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) for.end ---
+...for.cond
+___j.0(30, +Inf)
+
+
+
+--- (5) for.cond ---
+...for.body
+...entry
+___a.0(1, +Inf)
+___j.0(10, +Inf)
+
+@Phi: a.0 ([entry], add [for.body])
+a.0(1, +Inf) (1, 1) add(-Inf, +Inf)
+j.0 < 30
+Tripcount 20
+Sum 1 on 10 for 20
+=201
+UPDATE: a.0(1, 201) in for.cond
+
+@Phi: j.0 ([entry], inc [for.body])
+j.0(10, +Inf) (10, 10) inc(11, 30)
+j.0 < 30
+UPDATE: j.0(10, 30) in for.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+j.0 < 30
+j.0(10, 30) j.0(10, 29) (-Inf, 29)
+j.0(10, 30) j.0(30, +Inf) (30, +Inf)
+for.body: (10, 29)
+for.end: (30, 30)
+
++ for.body (notVisited=0, isUpdated=1)
++ for.end (notVisited=0, isUpdated=1)
+UPDATE: j.0(10, 29) in for.body
+UPDATE: j.0(30, 30) in for.end
+
+
+--- (6) for.body ---
+...for.cond
+___j.0(10, 29)
+___add(-Inf, +Inf)
+___inc(11, 30)
+
+@Operation
+add = a.0(-Inf, +Inf) | 10 [for.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j.0(10, 29) | 1 [for.body]
+NEW: inc(11, 30)
+
+@Br-Simple
+LOOP on for.cond
+
+
+--- (7) for.end ---
+...for.cond
+___j.0(30, 30)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   a.0(1, 201) = 201 {9bit}
+   j.0(10, 30) = 21 {6bit}
+
+BB: for.body
+   j.0(10, 29) = 20 {6bit}
+   add(-Inf, +Inf) = MAX
+   inc(11, 30) = 20 {6bit}
+
+BB: for.end
+   j.0(30, 30) = 1 {2bit}

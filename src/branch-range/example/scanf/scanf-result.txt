@@ -1,0 +1,135 @@
+--- (1) entry ---
+___No visited
+
+
+@Call
+Unknown range on a(1)
+
+@Load
+a
+.pre
+
+@Br-Simple
++ while.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+...while.body
+...entry
+___No references
+
+@Phi:  (.pre[entry], add [while.body])
+add(-Inf, +Inf) add(-Inf, +Inf) add(-Inf, +Inf)
+
+@Phi: k.0 ([entry], add1 [while.body])
+add1(-Inf, +Inf) (0, 0) add1(-Inf, +Inf)
+NEW: k.0(0, +Inf) in while.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 10
+k.0(0, +Inf) k.0(-Inf, +Inf) (-Inf, 9)
+k.0(0, +Inf) k.0(-Inf, +Inf) (10, +Inf)
+while.body: (0, 9)
+while.end: (10, +Inf)
+
++ while.body (notVisited=1, isUpdated=1)
++ while.end (notVisited=1, isUpdated=1)
+NEW: k.0(0, 9) in while.body
+NEW: k.0(10, +Inf) in while.end
+
+
+--- (3) while.body ---
+...while.cond
+___k.0(0, 9)
+
+@Operation
+NEW: add(-Inf, +Inf)
+
+
+@Operation
+add1 = k.0(0, 9) | 1 [while.body]
+NEW: add1(1, 10)
+
+@Br-Simple
+LOOP on while.cond
++ while.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) while.end ---
+...while.cond
+___k.0(10, +Inf)
+
+
+
+--- (5) while.cond ---
+...while.body
+...entry
+___k.0(0, +Inf)
+
+@Phi:  (.pre[entry], add [while.body])
+.pre(-Inf, +Inf) .pre(-Inf, +Inf) add(-Inf, +Inf)
+
+@Phi: k.0 ([entry], add1 [while.body])
+k.0(0, +Inf) (0, 0) add1(1, 10)
+k.0 < 10
+UPDATE: k.0(0, 10) in while.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 10
+k.0(0, 10) k.0(0, 9) (-Inf, 9)
+k.0(0, 10) k.0(10, +Inf) (10, +Inf)
+while.body: (0, 9)
+while.end: (10, 10)
+
++ while.body (notVisited=0, isUpdated=1)
++ while.end (notVisited=0, isUpdated=1)
+UPDATE: k.0(0, 9) in while.body
+UPDATE: k.0(10, 10) in while.end
+
+
+--- (6) while.body ---
+...while.cond
+___k.0(0, 9)
+___add(-Inf, +Inf)
+___add1(1, 10)
+
+@Operation
+NEW: add(-Inf, +Inf)
+
+
+@Operation
+add1 = k.0(0, 9) | 1 [while.body]
+NEW: add1(1, 10)
+
+@Br-Simple
+LOOP on while.cond
+
+
+--- (7) while.end ---
+...while.cond
+___k.0(10, 10)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   k.0(0, 10) = 11 {5bit}
+
+BB: while.body
+   k.0(0, 9) = 10 {5bit}
+   add(-Inf, +Inf) = MAX
+   add1(1, 10) = 10 {5bit}
+
+BB: while.end
+   k.0(10, 10) = 1 {2bit}

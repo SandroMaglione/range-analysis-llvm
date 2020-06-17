@@ -1,0 +1,157 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ while.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+...while.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], a.1 [while.body])
+a.1(-Inf, +Inf) (0, 0) a.1(-Inf, +Inf)
+NEW: a.0(-Inf, +Inf) in while.cond
+
+@Phi: k.0 ([entry], add3 [while.body])
+add3(-Inf, +Inf) (0, 0) add3(-Inf, +Inf)
+NEW: k.0(0, +Inf) in while.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 10
+k.0(0, +Inf) k.0(-Inf, +Inf) (-Inf, 9)
+k.0(0, +Inf) k.0(-Inf, +Inf) (10, +Inf)
+while.body: (0, 9)
+while.end: (10, +Inf)
+
++ while.body (notVisited=1, isUpdated=1)
++ while.end (notVisited=1, isUpdated=1)
+NEW: k.0(0, 9) in while.body
+NEW: k.0(10, +Inf) in while.end
+
+
+--- (3) while.body ---
+...while.cond
+___k.0(0, 9)
+
+@Cmp
+NEW: cmp1
+
+
+@Operation
+add = a.0(-Inf, +Inf) | 1 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+add2 = a.0(-Inf, +Inf) | 10 [while.body]
+NEW: add2(-Inf, +Inf)
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0(0, 9) | 1 [while.body]
+NEW: add3(1, 10)
+
+@Br-Simple
+LOOP on while.cond
++ while.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) while.end ---
+...while.cond
+___k.0(10, +Inf)
+
+
+
+--- (5) while.cond ---
+...while.body
+...entry
+___a.0(-Inf, +Inf)
+___k.0(0, +Inf)
+
+@Phi: a.0 ([entry], a.1 [while.body])
+a.0(-Inf, +Inf) (0, 0) a.1(-Inf, +Inf)
+UPDATE: a.0(-Inf, +Inf) in while.cond
+
+@Phi: k.0 ([entry], add3 [while.body])
+k.0(0, +Inf) (0, 0) add3(1, 10)
+k.0 < 10
+UPDATE: k.0(0, 10) in while.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 10
+k.0(0, 10) k.0(0, 9) (-Inf, 9)
+k.0(0, 10) k.0(10, +Inf) (10, +Inf)
+while.body: (0, 9)
+while.end: (10, 10)
+
++ while.body (notVisited=0, isUpdated=1)
++ while.end (notVisited=0, isUpdated=1)
+UPDATE: k.0(0, 9) in while.body
+UPDATE: k.0(10, 10) in while.end
+
+
+--- (6) while.body ---
+...while.cond
+___k.0(0, 9)
+___add(-Inf, +Inf)
+___add2(-Inf, +Inf)
+___add3(1, 10)
+
+@Cmp
+
+@Operation
+add = a.0(-Inf, +Inf) | 1 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Operation
+add2 = a.0(-Inf, +Inf) | 10 [while.body]
+NEW: add2(-Inf, +Inf)
+
+@Select
+Condition: cmp1
+True: add
+False: add2
+
+@Operation
+add3 = k.0(0, 9) | 1 [while.body]
+NEW: add3(1, 10)
+
+@Br-Simple
+LOOP on while.cond
+
+
+--- (7) while.end ---
+...while.cond
+___k.0(10, 10)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   a.0(-Inf, +Inf) = MAX
+   k.0(0, 10) = 11 {5bit}
+
+BB: while.body
+   k.0(0, 9) = 10 {5bit}
+   add(-Inf, +Inf) = MAX
+   add2(-Inf, +Inf) = MAX
+   add3(1, 10) = 10 {5bit}
+
+BB: while.end
+   k.0(10, 10) = 1 {2bit}
