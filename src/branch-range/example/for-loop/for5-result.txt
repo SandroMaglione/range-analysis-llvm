@@ -1,0 +1,137 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ for.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) for.cond ---
+...for.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], add [for.body])
+add(-Inf, +Inf) (10, 10) add(-Inf, +Inf)
+NEW: a.0(-Inf, +Inf) in for.cond
+
+@Phi: j1.0 ([entry], inc [for.body])
+inc(-Inf, +Inf) (0, 0) inc(-Inf, +Inf)
+NEW: j1.0(0, +Inf) in for.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+j1.0 < 100
+j1.0(0, +Inf) j1.0(-Inf, +Inf) (-Inf, 99)
+j1.0(0, +Inf) j1.0(-Inf, +Inf) (100, +Inf)
+for.body: (0, 99)
+for.end: (100, +Inf)
+
++ for.body (notVisited=1, isUpdated=1)
++ for.end (notVisited=1, isUpdated=1)
+NEW: j1.0(0, 99) in for.body
+NEW: j1.0(100, +Inf) in for.end
+
+
+--- (3) for.body ---
+...for.cond
+___j1.0(0, 99)
+
+@Cmp
+NEW: cmp2
+
+
+@Operation
+BOTH REF: a.0, j1.0
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j1.0(0, 99) | 1 [for.body]
+NEW: inc(1, 100)
+
+@Br-Simple
+LOOP on for.cond
++ for.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) for.end ---
+...for.cond
+___j1.0(100, +Inf)
+
+
+
+--- (5) for.cond ---
+...for.body
+...entry
+___a.0(-Inf, +Inf)
+___j1.0(0, +Inf)
+
+@Phi: a.0 ([entry], add [for.body])
+a.0(-Inf, +Inf) (10, 10) add(-Inf, +Inf)
+UPDATE: a.0(-Inf, +Inf) in for.cond
+
+@Phi: j1.0 ([entry], inc [for.body])
+j1.0(0, +Inf) (0, 0) inc(1, 100)
+j1.0 < 100
+UPDATE: j1.0(0, 100) in for.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+j1.0 < 100
+j1.0(0, 100) j1.0(0, 99) (-Inf, 99)
+j1.0(0, 100) j1.0(100, +Inf) (100, +Inf)
+for.body: (0, 99)
+for.end: (100, 100)
+
++ for.body (notVisited=0, isUpdated=1)
++ for.end (notVisited=0, isUpdated=1)
+UPDATE: j1.0(0, 99) in for.body
+UPDATE: j1.0(100, 100) in for.end
+
+
+--- (6) for.body ---
+...for.cond
+___j1.0(0, 99)
+___add(-Inf, +Inf)
+___inc(1, 100)
+
+@Cmp
+
+@Operation
+BOTH REF: a.0, j1.0
+NEW: add(-Inf, +Inf)
+
+@Operation
+inc = j1.0(0, 99) | 1 [for.body]
+NEW: inc(1, 100)
+
+@Br-Simple
+LOOP on for.cond
+
+
+--- (7) for.end ---
+...for.cond
+___j1.0(100, 100)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   a.0(-Inf, +Inf) = MAX
+   j1.0(0, 100) = 101 {8bit}
+
+BB: for.body
+   j1.0(0, 99) = 100 {8bit}
+   add(-Inf, +Inf) = MAX
+   inc(1, 100) = 100 {8bit}
+
+BB: for.end
+   j1.0(100, 100) = 1 {2bit}

@@ -1,0 +1,147 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ for.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) for.cond ---
+...for.body
+...entry
+___No references
+
+@Phi: a.0 ([entry], spec.select [for.body])
+spec.select(-Inf, +Inf) (10, 10) spec.select(-Inf, +Inf)
+NEW: a.0(-Inf, +Inf) in for.cond
+
+@Phi: j.0 ([entry], dec [for.body])
+dec(-Inf, +Inf) (100, 100) dec(-Inf, +Inf)
+NEW: j.0(-Inf, 100) in for.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+j.0 > 0
+j.0(-Inf, 100) j.0(-Inf, +Inf) (1, +Inf)
+j.0(-Inf, 100) j.0(-Inf, +Inf) (-Inf, 0)
+for.body: (1, 100)
+for.end: (-Inf, 0)
+
++ for.body (notVisited=1, isUpdated=1)
++ for.end (notVisited=1, isUpdated=1)
+NEW: j.0(1, 100) in for.body
+NEW: j.0(-Inf, 0) in for.end
+
+
+--- (3) for.body ---
+...for.cond
+___j.0(1, 100)
+
+@Cmp
+NEW: cmp1
+
+
+@Operation
+sub = a.0(-Inf, +Inf) | 5 [for.body]
+NEW: sub(-Inf, +Inf)
+
+@Select
+Condition: cmp1
+True: sub
+False: a.0
+
+@Operation
+dec = j.0(1, 100) | -1 [for.body]
+NEW: dec(0, 99)
+
+@Br-Simple
+LOOP on for.cond
++ for.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) for.end ---
+...for.cond
+___j.0(-Inf, 0)
+
+
+
+--- (5) for.cond ---
+...for.body
+...entry
+___a.0(-Inf, +Inf)
+___j.0(-Inf, 100)
+
+@Phi: a.0 ([entry], spec.select [for.body])
+a.0(-Inf, +Inf) (10, 10) spec.select(-Inf, +Inf)
+UPDATE: a.0(-Inf, +Inf) in for.cond
+
+@Phi: j.0 ([entry], dec [for.body])
+j.0(-Inf, 100) (100, 100) dec(0, 99)
+j.0 > 0
+UPDATE: j.0(0, 100) in for.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+j.0 > 0
+j.0(0, 100) j.0(1, 100) (1, +Inf)
+j.0(0, 100) j.0(-Inf, 0) (-Inf, 0)
+for.body: (1, 100)
+for.end: (0, 0)
+
++ for.body (notVisited=0, isUpdated=1)
++ for.end (notVisited=0, isUpdated=1)
+UPDATE: j.0(1, 100) in for.body
+UPDATE: j.0(0, 0) in for.end
+
+
+--- (6) for.body ---
+...for.cond
+___j.0(1, 100)
+___sub(-Inf, +Inf)
+___dec(0, 99)
+
+@Cmp
+
+@Operation
+sub = a.0(-Inf, +Inf) | 5 [for.body]
+NEW: sub(-Inf, +Inf)
+
+@Select
+Condition: cmp1
+True: sub
+False: a.0
+
+@Operation
+dec = j.0(1, 100) | -1 [for.body]
+NEW: dec(0, 99)
+
+@Br-Simple
+LOOP on for.cond
+
+
+--- (7) for.end ---
+...for.cond
+___j.0(0, 0)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   a.0(-Inf, +Inf) = MAX
+   j.0(0, 100) = 101 {8bit}
+
+BB: for.body
+   j.0(1, 100) = 100 {8bit}
+   sub(-Inf, +Inf) = MAX
+   dec(0, 99) = 100 {8bit}
+
+BB: for.end
+   j.0(0, 0) = 1 {2bit}

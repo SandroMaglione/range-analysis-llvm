@@ -1,0 +1,187 @@
+--- (1) entry ---
+___No visited
+
+@Br-Simple
++ while.cond (notVisited=1, isUpdated=0)
+
+
+--- (2) while.cond ---
+...while.body
+...entry
+___No references
+
+@Phi: b.0 ([entry], b.1 [while.body])
+b.1(-Inf, +Inf) (0, 0) b.1(-Inf, +Inf)
+NEW: b.0(-Inf, +Inf) in while.cond
+
+@Phi: a.0 ([entry], add [while.body])
+add(-Inf, +Inf) (1, 1) add(-Inf, +Inf)
+NEW: a.0(1, +Inf) in while.cond
+
+@Phi: k.0 ([entry], add4 [while.body])
+add4(-Inf, +Inf) (-100, -100) add4(-Inf, +Inf)
+NEW: k.0(-100, +Inf) in while.cond
+
+@Cmp
+NEW: cmp
+
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 10
+k.0(-100, +Inf) k.0(-Inf, +Inf) (-Inf, 9)
+k.0(-100, +Inf) k.0(-Inf, +Inf) (10, +Inf)
+while.body: (-100, 9)
+while.end: (10, +Inf)
+
++ while.body (notVisited=1, isUpdated=1)
++ while.end (notVisited=1, isUpdated=1)
+NEW: k.0(-100, 9) in while.body
+NEW: k.0(10, +Inf) in while.end
+
+
+--- (3) while.body ---
+...while.cond
+___k.0(-100, 9)
+
+@Operation
+add = a.0(-Inf, +Inf) | 1 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Cmp
+NEW: cmp1
+
+
+@Cmp
+NEW: cmp2
+
+
+@Operation
+BOTH REF: cmp1, cmp2
+NEW: or.cond(-Inf, +Inf)
+
+@Operation
+add3 = b.0(-Inf, +Inf) | 1 [while.body]
+NEW: add3(-Inf, +Inf)
+
+@Select
+Condition: or.cond
+True: add3
+False: b.0
+
+@Operation
+add4 = k.0(-100, 9) | 1 [while.body]
+NEW: add4(-99, 10)
+
+@Br-Simple
+LOOP on while.cond
++ while.cond (notVisited=0, isUpdated=1)
+
+
+--- (4) while.end ---
+...while.cond
+___k.0(10, +Inf)
+
+
+
+--- (5) while.cond ---
+...while.body
+...entry
+___b.0(-Inf, +Inf)
+___a.0(1, +Inf)
+___k.0(-100, +Inf)
+
+@Phi: b.0 ([entry], b.1 [while.body])
+b.0(-Inf, +Inf) (0, 0) b.1(-Inf, +Inf)
+UPDATE: b.0(-Inf, +Inf) in while.cond
+
+@Phi: a.0 ([entry], add [while.body])
+a.0(1, +Inf) (1, 1) add(-Inf, +Inf)
+k.0 < 10
+Tripcount 110
+Sum 1 on 1 for 110
+=111
+UPDATE: a.0(1, 111) in while.cond
+
+@Phi: k.0 ([entry], add4 [while.body])
+k.0(-100, +Inf) (-100, -100) add4(-99, 10)
+k.0 < 10
+UPDATE: k.0(-100, 10) in while.cond
+
+@Cmp
+
+@Br-Complex
+Condition: cmp
+
+k.0 < 10
+k.0(-100, 10) k.0(-100, 9) (-Inf, 9)
+k.0(-100, 10) k.0(10, +Inf) (10, +Inf)
+while.body: (-100, 9)
+while.end: (10, 10)
+
++ while.body (notVisited=0, isUpdated=1)
++ while.end (notVisited=0, isUpdated=1)
+UPDATE: k.0(-100, 9) in while.body
+UPDATE: k.0(10, 10) in while.end
+
+
+--- (6) while.body ---
+...while.cond
+___k.0(-100, 9)
+___add(-Inf, +Inf)
+___or.cond(-Inf, +Inf)
+___add3(-Inf, +Inf)
+___add4(-99, 10)
+
+@Operation
+add = a.0(-Inf, +Inf) | 1 [while.body]
+NEW: add(-Inf, +Inf)
+
+@Cmp
+
+@Cmp
+
+@Operation
+BOTH REF: cmp1, cmp2
+NEW: or.cond(-Inf, +Inf)
+
+@Operation
+add3 = b.0(-Inf, +Inf) | 1 [while.body]
+NEW: add3(-Inf, +Inf)
+
+@Select
+Condition: or.cond
+True: add3
+False: b.0
+
+@Operation
+add4 = k.0(-100, 9) | 1 [while.body]
+NEW: add4(-99, 10)
+
+@Br-Simple
+LOOP on while.cond
+
+
+--- (7) while.end ---
+...while.cond
+___k.0(10, 10)
+
+
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   b.0(-Inf, +Inf) = MAX
+   a.0(1, 111) = 111 {8bit}
+   k.0(-100, 10) = 111 {8bit}
+
+BB: while.body
+   k.0(-100, 9) = 110 {8bit}
+   add(-Inf, +Inf) = MAX
+   or.cond(-Inf, +Inf) = MAX
+   add3(-Inf, +Inf) = MAX
+   add4(-99, 10) = 110 {8bit}
+
+BB: while.end
+   k.0(10, 10) = 1 {2bit}
