@@ -27,6 +27,12 @@ add_llvm_loadable_module( LLVMConstantRange
 - Open directory **~/Public/project/llvm-project/build**
 - Run command `make -j4` to build the pass
 
+## Benchmarks
+The benchmarks sources are taken from the following repositories:
+- https://github.com/TheAlgorithms/C
+- https://github.com/xtaci/algorithms
+- https://github.com/AllAlgorithms/c
+
 ## Info
 The passes have been tested on some example files. The code is not guaranteed to function in all cases. The passes can be expanded to encompass more code statements. See `src/branch-range/example` and `src/constant-range/example` to view the test cases and their results.
 

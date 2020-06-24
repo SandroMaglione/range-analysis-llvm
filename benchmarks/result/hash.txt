@@ -1,0 +1,31 @@
+--- VALUE-RANGES ---
+BB: for.cond
+   j.0(0, 8) = 9 {5bit}
+   crc.1(-Inf, +Inf) = MAX
+
+BB: entry
+
+BB: while.cond
+   crc.0(-Inf, +Inf) = MAX
+   i.0(0, +Inf) = MAX
+
+BB: for.end
+   j.0(0, 0) = 1 {2bit}
+   inc(-Inf, +Inf) = MAX
+
+BB: while.body
+   xor(-Inf, +Inf) = MAX
+   conv(-Inf, +Inf) = MAX
+
+BB: while.end
+   conv(-Inf, +Inf) = MAX
+   xor9(-Inf, +Inf) = MAX
+
+BB: for.body
+   j.0(1, 8) = 8 {4bit}
+   shr(-Inf, +Inf) = MAX
+   and(-Inf, +Inf) = MAX
+   sub(-Inf, +Inf) = MAX
+   and7(-Inf, +Inf) = MAX
+   xor8(-Inf, +Inf) = MAX
+   dec(0, 7) = 8 {4bit}

@@ -30,7 +30,7 @@ namespace
             // Max int range (infinity)
             int infMax = std::numeric_limits<int>::max();
             int infMin = std::numeric_limits<int>::min();
-            int maxLoops = 25;
+            int maxLoops = 1000;
             int iterLoops = 0;
 
             // Create Null range reference

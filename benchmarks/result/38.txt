@@ -1,0 +1,52 @@
+--- VALUE-RANGES ---
+BB: if.then
+   inc25(-Inf, +Inf) = MAX
+   conv13(-Inf, +Inf) = MAX
+
+BB: if.else
+   add27(-Inf, +Inf) = MAX
+   add36(-Inf, +Inf) = MAX
+   conv13(-Inf, +Inf) = MAX
+   add33(-Inf, +Inf) = MAX
+
+BB: entry
+
+BB: for.cond
+   i.0(0, 9) = 10 {5bit}
+   result.0(-Inf, +Inf) = MAX
+
+BB: for.body
+   i.0(0, 8) = 9 {5bit}
+   mul(-Inf, +Inf) = MAX
+   inc(1, 9) = 9 {5bit}
+
+BB: for.end
+   i.0(9, 9) = 1 {2bit}
+   add(-Inf, +Inf) = MAX
+
+BB: while.cond
+   count.0(-Inf, +Inf) = MAX
+   j.0(-Inf, +Inf) = MAX
+   k.0(-Inf, +Inf) = MAX
+
+BB: for.cond4
+   i3.0(2, +Inf) = MAX
+
+BB: while.end
+   conv13(-Inf, +Inf) = MAX
+   inc42(-Inf, +Inf) = MAX
+
+BB: for.body7
+   i3.0(2, 10) = 9 {5bit}
+   mul10(-Inf, +Inf) = MAX
+
+BB: for.end43
+   i3.0(11, +Inf) = MAX
+
+BB: if.end
+   count.1(-Inf, +Inf) = MAX
+   k.1(-Inf, +Inf) = MAX
+
+BB: while.body
+   conv13(-Inf, +Inf) = MAX
+   add19(-Inf, +Inf) = MAX

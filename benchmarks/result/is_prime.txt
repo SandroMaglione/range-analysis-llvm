@@ -1,0 +1,25 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   i.0(2, +Inf) = MAX
+
+BB: for.inc
+   rem(12, 19) = 8 {4bit}
+   inc(-Inf, +Inf) = MAX
+
+BB: for.body
+   i.0(2, 9) = 8 {4bit}
+   rem(12, 19) = 8 {4bit}
+
+BB: for.end
+   i.0(10, +Inf) = MAX
+   rem(0, 12) = 13 {5bit}
+
+BB: if.then3
+   i.0(10, 10) = 1 {2bit}
+
+BB: if.else
+   i.0(10, +Inf) = MAX
+
+BB: if.end5

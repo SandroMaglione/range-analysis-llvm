@@ -1,0 +1,18 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   number.0(11, +Inf) = MAX
+   decimal_number.0(-Inf, +Inf) = MAX
+   temp.0(-Inf, +Inf) = MAX
+
+BB: while.body
+   number.0(11, +Inf) = MAX
+   rem(21, +Inf) = MAX
+   div(21, +Inf) = MAX
+   mul(-Inf, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+   mul1(-Inf, +Inf) = MAX
+
+BB: while.end
+   number.0(0, 11) = 12 {5bit}

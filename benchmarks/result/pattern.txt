@@ -1,0 +1,36 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.end
+   sub7(-Inf, +Inf) = MAX
+   j.0(1, +Inf) = MAX
+
+BB: for.cond
+   i.0(0, +Inf) = MAX
+
+BB: for.end22
+   j9.0(1, +Inf) = MAX
+   inc25(-Inf, +Inf) = MAX
+
+BB: for.cond1
+   i.0(0, 99) = 100 {8bit}
+   ch.0(-Inf, +Inf) = MAX
+   j.0(1, +Inf) = MAX
+   sub(1, 100) = 100 {8bit}
+
+BB: for.end26
+   i.0(100, +Inf) = MAX
+
+BB: for.body3
+   j.0(1, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+   inc(2, +Inf) = MAX
+
+BB: for.cond10
+   ch.1(-Inf, +Inf) = MAX
+   j9.0(1, +Inf) = MAX
+
+BB: for.body14
+   j9.0(1, +Inf) = MAX
+   sub18(-Inf, +Inf) = MAX
+   inc21(2, +Inf) = MAX

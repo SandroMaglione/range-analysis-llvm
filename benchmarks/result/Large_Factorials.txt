@@ -1,0 +1,62 @@
+--- VALUE-RANGES ---
+BB: for.end35
+   i.2(16500, 16500) = 1 {2bit}
+
+BB: entry
+
+BB: for.end
+   i.0(16500, 16500) = 1 {2bit}
+
+BB: while.cond
+   T.0(-Inf, +Inf) = MAX
+   dec(-Inf, +Inf) = MAX
+
+BB: for.end45
+   i.3(-Inf, 0) = MAX
+
+BB: for.cond
+   T.0(-Inf, +Inf) = MAX
+   i.0(0, 16500) = 16501 {16bit}
+
+BB: while.end
+   T.0(-Inf, +Inf) = MAX
+
+BB: for.body
+   i.0(0, 16499) = 16500 {16bit}
+   inc(1, 16500) = 16500 {16bit}
+
+BB: for.cond7
+   i.1(1, +Inf) = MAX
+   carry.0(-Inf, +Inf) = MAX
+   j.0(0, 16500) = 16501 {16bit}
+
+BB: for.cond25
+   i.2(0, 16500) = 16501 {16bit}
+   count.0(-Inf, +Inf) = MAX
+   i.1(1, +Inf) = MAX
+
+BB: for.cond3
+   i.1(1, +Inf) = MAX
+
+BB: for.inc22
+   j.0(16500, 16500) = 1 {2bit}
+   inc23(-Inf, +Inf) = MAX
+
+BB: for.body28
+   i.2(0, 16499) = 16500 {16bit}
+   inc34(1, 16500) = 16500 {16bit}
+
+BB: for.cond37
+   i.3(-Inf, +Inf) = MAX
+
+BB: for.body40
+   i.3(1, +Inf) = MAX
+   dec44(0, +Inf) = MAX
+
+BB: for.body10
+   j.0(0, 16499) = 16500 {16bit}
+   mul(-Inf, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+   div(-Inf, +Inf) = MAX
+   rem(-Inf, +Inf) = MAX
+   inc20(1, 16500) = 16500 {16bit}
