@@ -1,0 +1,124 @@
+--- VALUE-RANGES ---
+BB: for.inc106
+   j.2(31, 31) = 1 {2bit}
+   inc107(-Inf, +Inf) = MAX
+
+BB: for.cond38
+   i.2(1, 30) = 30 {6bit}
+   j.2(1, 31) = 31 {6bit}
+
+BB: entry
+
+BB: for.cond
+   i.0(0, +Inf) = MAX
+
+BB: for.inc10
+   j.0(32, 32) = 1 {2bit}
+   inc11(-Inf, +Inf) = MAX
+
+BB: for.cond1
+   i.0(0, 31) = 32 {6bit}
+   j.0(0, 32) = 33 {7bit}
+
+BB: for.cond13
+   i.0(32, +Inf) = MAX
+   seed.0(-Inf, +Inf) = MAX
+   i.1(1, +Inf) = MAX
+
+BB: for.body3
+   j.0(0, 31) = 32 {6bit}
+   inc(1, 32) = 32 {6bit}
+
+BB: while.cond
+   i.1(31, +Inf) = MAX
+   it.0(0, +Inf) = MAX
+
+BB: for.inc31
+   j.1(31, 31) = 1 {2bit}
+   inc32(-Inf, +Inf) = MAX
+
+BB: for.cond16
+   i.1(1, 30) = 30 {6bit}
+   seed.1(-Inf, +Inf) = MAX
+   j.1(1, 31) = 31 {6bit}
+
+BB: for.cond109
+   i.2(31, +Inf) = MAX
+   i.3(1, +Inf) = MAX
+
+BB: for.body40
+   j.2(1, 30) = 30 {6bit}
+   sub(-Inf, +Inf) = MAX
+   sub43(0, 29) = 30 {6bit}
+   add51(-Inf, +Inf) = MAX
+   add55(2, 31) = 30 {6bit}
+   add63(-Inf, +Inf) = MAX
+   add64(-Inf, +Inf) = MAX
+   add70(-Inf, +Inf) = MAX
+   add76(-Inf, +Inf) = MAX
+   add88(-Inf, +Inf) = MAX
+   add89(-Inf, +Inf) = MAX
+   add90(-Inf, +Inf) = MAX
+   and98(-Inf, +Inf) = MAX
+   or(-Inf, +Inf) = MAX
+
+BB: for.body18
+   j.1(1, 30) = 30 {6bit}
+   mul(-Inf, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+   and(-Inf, +Inf) = MAX
+   inc29(2, 31) = 30 {6bit}
+
+BB: for.end187
+   i.3(31, +Inf) = MAX
+   add188(-Inf, +Inf) = MAX
+
+BB: for.cond35
+   i.2(1, +Inf) = MAX
+   it.0(0, 9) = 10 {5bit}
+
+BB: for.cond189
+   it.0(10, +Inf) = MAX
+   checksum.0(-Inf, +Inf) = MAX
+   i.4(0, +Inf) = MAX
+
+BB: for.cond113
+   i.3(1, 30) = 30 {6bit}
+   j.3(1, 31) = 31 {6bit}
+
+BB: for.body116
+   j.3(1, 30) = 30 {6bit}
+   sub117(-Inf, +Inf) = MAX
+   sub120(0, 29) = 30 {6bit}
+   add128(-Inf, +Inf) = MAX
+   add132(2, 31) = 30 {6bit}
+   add165(-Inf, +Inf) = MAX
+   add140(-Inf, +Inf) = MAX
+   add141(-Inf, +Inf) = MAX
+   add147(-Inf, +Inf) = MAX
+   add153(-Inf, +Inf) = MAX
+   add166(-Inf, +Inf) = MAX
+   add167(-Inf, +Inf) = MAX
+   and176(-Inf, +Inf) = MAX
+   or177(-Inf, +Inf) = MAX
+
+BB: for.inc185
+   j.3(31, 31) = 1 {2bit}
+   inc186(-Inf, +Inf) = MAX
+
+BB: for.inc205
+   j.4(32, 32) = 1 {2bit}
+   inc206(-Inf, +Inf) = MAX
+
+BB: for.cond193
+   i.4(0, 31) = 32 {6bit}
+   checksum.1(-Inf, +Inf) = MAX
+   j.4(0, 32) = 33 {7bit}
+
+BB: for.end207
+   i.4(32, +Inf) = MAX
+
+BB: for.body196
+   j.4(0, 31) = 32 {6bit}
+   add201(-Inf, +Inf) = MAX
+   inc203(1, 32) = 32 {6bit}

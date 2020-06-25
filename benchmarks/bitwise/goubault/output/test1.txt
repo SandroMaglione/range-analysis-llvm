@@ -1,0 +1,12 @@
+--- VALUE-RANGES ---
+BB: while.body
+   x.0(0, 99) = 100 {8bit}
+   add(1, 100) = 100 {8bit}
+
+BB: entry
+
+BB: while.cond
+   x.0(0, 100) = 101 {8bit}
+
+BB: while.end
+   x.0(100, 100) = 1 {2bit}

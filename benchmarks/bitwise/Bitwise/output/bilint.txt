@@ -1,0 +1,20 @@
+--- VALUE-RANGES ---
+BB: entry
+   and(-Inf, +Inf) = MAX
+   shr(-Inf, +Inf) = MAX
+   and4(-Inf, +Inf) = MAX
+   shr5(-Inf, +Inf) = MAX
+   add20(-Inf, +Inf) = MAX
+   shr7(-Inf, +Inf) = MAX
+   shr8(-Inf, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+   sub(-Inf, +Inf) = MAX
+   sub39(-Inf, +Inf) = MAX
+   mul(-Inf, +Inf) = MAX
+   mul44(-Inf, +Inf) = MAX
+   mul49(-Inf, +Inf) = MAX
+   mul51(-Inf, +Inf) = MAX
+   shr52(-Inf, +Inf) = MAX
+   shr53(-Inf, +Inf) = MAX
+   shr54(-Inf, +Inf) = MAX
+   shr55(-Inf, +Inf) = MAX

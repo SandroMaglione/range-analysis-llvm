@@ -1,0 +1,31 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond4
+   i.1(-Inf, 99) = MAX
+   j.2(-Inf, +Inf) = MAX
+
+BB: while.cond
+   j.0(-Inf, +Inf) = MAX
+   i.0(1, +Inf) = MAX
+   k.0(-Inf, +Inf) = MAX
+
+BB: while.end7
+   i.1(100, +Inf) = MAX
+   sub8(-Inf, +Inf) = MAX
+
+BB: while.cond1
+   k.0(-Inf, 999) = MAX
+   j.1(-Inf, +Inf) = MAX
+   i.1(-Inf, +Inf) = MAX
+
+BB: while.end9
+   k.0(1000, +Inf) = MAX
+
+BB: while.end
+   j.2(-Inf, 1) = MAX
+   add(-Inf, +Inf) = MAX
+
+BB: while.body6
+   j.2(2, +Inf) = MAX
+   sub(-Inf, +Inf) = MAX

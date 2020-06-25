@@ -1,0 +1,14 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   i.0(1, +Inf) = MAX
+   j.0(-Inf, 10) = MAX
+
+BB: while.body
+   j.0(-Inf, 10) = MAX
+   add(-Inf, +Inf) = MAX
+   add1(-Inf, 9) = MAX
+
+BB: while.end
+   j.0(-Inf, 10) = MAX

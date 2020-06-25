@@ -1,0 +1,44 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   i.0(0, 16384) = 16385 {16bit}
+
+BB: for.body
+   i.0(0, 16383) = 16384 {15bit}
+   and(-Inf, +Inf) = MAX
+   and2(-Inf, +Inf) = MAX
+   inc(1, 16384) = 16384 {15bit}
+
+BB: for.cond6
+   i.0(16384, 16384) = 1 {2bit}
+   cptr.0(-Inf, +Inf) = MAX
+   bptr.0(-Inf, +Inf) = MAX
+   i.1(0, +Inf) = MAX
+   val.0(-Inf, 65535) = MAX
+
+BB: if.end26
+   sub27(-Inf, +Inf) = MAX
+   val.1(-Inf, 65535) = MAX
+   inc32(-Inf, +Inf) = MAX
+
+BB: for.cond10
+   cptr.1(-Inf, +Inf) = MAX
+   i.1(0, 15) = 16 {5bit}
+   bptr.1(-Inf, +Inf) = MAX
+   j.0(0, 16) = 17 {6bit}
+   val.1(-Inf, +Inf) = MAX
+
+BB: for.end33
+   i.1(16, +Inf) = MAX
+   val.1(65536, +Inf) = MAX
+
+BB: for.body13
+   add(-Inf, +Inf) = MAX
+   inc21(1, 16) = 16 {5bit}
+   j.0(0, 15) = 16 {5bit}
+   sub(-Inf, +Inf) = MAX
+   sub19(-Inf, +Inf) = MAX
+
+BB: for.end22
+   j.0(16, 16) = 1 {2bit}

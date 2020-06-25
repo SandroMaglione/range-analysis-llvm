@@ -1,0 +1,29 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.body7
+   k.0(3, 4) = 2 {2bit}
+   add8(4, 5) = 2 {2bit}
+
+BB: while.cond
+   j.0(-100, +Inf) = MAX
+   i.0(-Inf, +Inf) = MAX
+   k.0(4, 4) = 1 {2bit}
+
+BB: while.cond5
+   j.1(20, +Inf) = MAX
+   k.0(4, 4) = 1 {2bit}
+
+BB: while.body
+   i.0(-Inf, 100) = MAX
+   add(-Inf, 101) = MAX
+
+BB: while.end10
+   i.0(101, +Inf) = MAX
+
+BB: while.cond1
+   j.1(-Inf, +Inf) = MAX
+
+BB: while.body3
+   j.1(-Inf, 19) = MAX
+   add4(-Inf, +Inf) = MAX

@@ -1,0 +1,82 @@
+--- VALUE-RANGES ---
+BB: for.end82
+   i.1(2407, +Inf) = MAX
+   inc86(-Inf, +Inf) = MAX
+
+BB: for.body11
+   iter.0(0, 1) = 2 {2bit}
+
+BB: entry
+
+BB: for.cond
+   i.0(0, 2407) = 2408 {13bit}
+
+BB: for.cond88
+   iter.0(2, +Inf) = MAX
+   j.1(0, 1204) = 1205 {12bit}
+   checksum.0(-Inf, +Inf) = MAX
+
+BB: for.body
+   and(65535, 67941) = 2407 {13bit}
+   inc(1, 2407) = 2407 {13bit}
+   i.0(0, 2406) = 2407 {13bit}
+
+BB: for.cond9
+   outputbuffer.0(-Inf, +Inf) = MAX
+   iter.0(0, +Inf) = MAX
+   i.0(2407, 2407) = 1 {2bit}
+
+BB: if.then31
+   delta.1(-Inf, +Inf) = MAX
+   or(-Inf, +Inf) = MAX
+   sub32(-Inf, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+
+BB: if.end33
+   delta.1(-Inf, +Inf) = MAX
+   vpdiff.1(-Inf, +Inf) = MAX
+   delta.2(-Inf, +Inf) = MAX
+   tmp.1(-Inf, +Inf) = MAX
+   shr34(-Inf, +Inf) = MAX
+   or38(-Inf, +Inf) = MAX
+   add39(-Inf, +Inf) = MAX
+   sub42(-Inf, +Inf) = MAX
+   add43(-Inf, +Inf) = MAX
+   and55(-Inf, +Inf) = MAX
+   add58(-Inf, +Inf) = MAX
+   and69(-Inf, +Inf) = MAX
+
+BB: for.cond14
+   outputbuffer.1(-Inf, +Inf) = MAX
+   index.0(-Inf, +Inf) = MAX
+   step.0(-Inf, +Inf) = MAX
+   valprev.0(-Inf, +Inf) = MAX
+   j.0(-Inf, +Inf) = MAX
+   i.1(0, +Inf) = MAX
+
+BB: if.end77
+   and69(-Inf, +Inf) = MAX
+   add79(-Inf, +Inf) = MAX
+   inc81(-Inf, +Inf) = MAX
+
+BB: for.body16
+   sub23(-Inf, +Inf) = MAX
+   sub27(-Inf, +Inf) = MAX
+   shr(-Inf, +Inf) = MAX
+   i.1(0, 2406) = 2407 {13bit}
+   sub(-Inf, +Inf) = MAX
+
+BB: for.body91
+   j.1(0, 1203) = 1204 {12bit}
+   add94(-Inf, +Inf) = MAX
+   inc96(1, 1204) = 1204 {12bit}
+
+BB: for.end97
+   j.1(1204, 1204) = 1 {2bit}
+
+BB: if.then71
+   and69(-Inf, +Inf) = MAX
+   and72(-Inf, +Inf) = MAX
+   shl(-Inf, +Inf) = MAX
+   and73(-Inf, +Inf) = MAX
+   or74(-Inf, +Inf) = MAX

@@ -1,0 +1,48 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   i.0(0, +Inf) = MAX
+
+BB: for.inc15
+   j.0(128, 128) = 1 {2bit}
+   inc16(-Inf, +Inf) = MAX
+
+BB: for.cond1
+   i.0(0, 3) = 4 {3bit}
+   j.0(0, 128) = 129 {9bit}
+
+BB: for.cond18
+   i.0(4, +Inf) = MAX
+   iter.0(0, +Inf) = MAX
+
+BB: for.body3
+   j.0(0, 127) = 128 {8bit}
+   inc(1, 128) = 128 {8bit}
+
+BB: for.body20
+   iter.0(0, 2) = 3 {3bit}
+
+BB: for.cond328
+   iter.0(3, +Inf) = MAX
+   checksum.0(-Inf, +Inf) = MAX
+   i.1(0, +Inf) = MAX
+
+BB: for.inc365
+   j.1(128, 128) = 1 {2bit}
+   inc366(-Inf, +Inf) = MAX
+
+BB: for.cond331
+   i.1(0, 3) = 4 {3bit}
+   checksum.1(-Inf, +Inf) = MAX
+   j.1(0, 128) = 129 {9bit}
+
+BB: for.end367
+   i.1(4, +Inf) = MAX
+
+BB: for.body333
+   j.1(0, 127) = 128 {8bit}
+   sub340(-Inf, +Inf) = MAX
+   sub348(-Inf, +Inf) = MAX
+   add361(-Inf, +Inf) = MAX
+   inc363(1, 128) = 128 {8bit}

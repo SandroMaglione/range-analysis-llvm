@@ -1,0 +1,97 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   a2.0(-Inf, +Inf) = MAX
+   i.0(0, +Inf) = MAX
+
+BB: for.inc11
+   j.0(64, 64) = 1 {2bit}
+   inc12(-Inf, +Inf) = MAX
+
+BB: for.body
+   i.0(0, 63) = 64 {7bit}
+   inc(-Inf, +Inf) = MAX
+
+BB: for.cond14
+   i.0(64, +Inf) = MAX
+   r.0(0, +Inf) = MAX
+
+BB: for.cond1
+   j.0(0, 64) = 65 {8bit}
+
+BB: for.body3
+   j.0(0, 63) = 64 {7bit}
+   inc10(1, 64) = 64 {7bit}
+
+BB: for.cond17
+   r.0(0, 31) = 32 {6bit}
+   i.1(1, +Inf) = MAX
+
+BB: for.inc94
+   i.2(63, +Inf) = MAX
+   add95(-Inf, +Inf) = MAX
+
+BB: for.cond97
+   r.0(32, +Inf) = MAX
+   i.3(0, +Inf) = MAX
+   checksum.0(-Inf, +Inf) = MAX
+
+BB: for.inc51
+   j.1(63, 63) = 1 {2bit}
+   inc52(-Inf, +Inf) = MAX
+
+BB: for.cond20
+   i.1(1, 62) = 62 {7bit}
+   j.1(1, 63) = 63 {7bit}
+
+BB: for.cond54
+   i.1(63, +Inf) = MAX
+   i.2(1, +Inf) = MAX
+
+BB: for.body22
+   add31(-Inf, +Inf) = MAX
+   sub34(0, 61) = 62 {7bit}
+   add37(-Inf, +Inf) = MAX
+   add40(2, 63) = 62 {7bit}
+   j.1(1, 62) = 62 {7bit}
+   sub(-Inf, +Inf) = MAX
+   add(-Inf, +Inf) = MAX
+   add43(-Inf, +Inf) = MAX
+   shr(-Inf, +Inf) = MAX
+
+BB: for.cond100
+   i.3(0, 63) = 64 {7bit}
+   checksum.1(-Inf, +Inf) = MAX
+   j.3(0, 64) = 65 {8bit}
+
+BB: for.end113
+   i.3(64, +Inf) = MAX
+
+BB: for.body102
+   j.3(0, 63) = 64 {7bit}
+   add107(-Inf, +Inf) = MAX
+   inc109(1, 64) = 64 {7bit}
+
+BB: for.inc91
+   j.2(63, 63) = 1 {2bit}
+   inc92(-Inf, +Inf) = MAX
+
+BB: for.cond57
+   i.2(1, 62) = 62 {7bit}
+   j.2(1, 63) = 63 {7bit}
+
+BB: for.body59
+   j.2(1, 62) = 62 {7bit}
+   sub60(-Inf, +Inf) = MAX
+   add65(-Inf, +Inf) = MAX
+   add70(-Inf, +Inf) = MAX
+   sub73(0, 61) = 62 {7bit}
+   add76(-Inf, +Inf) = MAX
+   add79(2, 63) = 62 {7bit}
+   add82(-Inf, +Inf) = MAX
+   shr83(-Inf, +Inf) = MAX
+
+BB: for.inc111
+   j.3(64, 64) = 1 {2bit}
+   inc112(-Inf, +Inf) = MAX

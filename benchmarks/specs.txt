@@ -1,0 +1,268 @@
+ubuntu                    
+    description: Computer
+    product: Standard PC (i440FX + PIIX, 1996)
+    vendor: QEMU
+    version: pc-i440fx-2.9
+    width: 64 bits
+    capabilities: smbios-2.8 dmi-2.8 vsyscall32
+    configuration: boot=normal uuid=C60CA8C3-469E-AC45-96C9-D0AC231FACD6
+  *-core
+       description: Motherboard
+       physical id: 0
+     *-firmware
+          description: BIOS
+          vendor: SeaBIOS
+          physical id: 0
+          version: rel-1.10.2-0-g5f4c7b1-prebuilt.qemu-project.org
+          date: 04/01/2014
+          size: 96KiB
+     *-cpu
+          description: CPU
+          product: Common KVM processor
+          vendor: Intel Corp.
+          physical id: 400
+          bus info: cpu@0
+          version: pc-i440fx-2.9
+          slot: CPU 0
+          size: 2GHz
+          capacity: 2GHz
+          width: 64 bits
+          capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx x86-64 constant_tsc nopl xtopology tsc_known_freq pni cx16 x2apic hypervisor lahf_lm kaiser
+          configuration: cores=4 enabledcores=4 threads=1
+     *-memory
+          description: System Memory
+          physical id: 1000
+          size: 32GiB
+        *-bank:0
+             description: DIMM RAM
+             vendor: QEMU
+             physical id: 0
+             slot: DIMM 0
+             size: 16GiB
+        *-bank:1
+             description: DIMM RAM
+             vendor: QEMU
+             physical id: 1
+             slot: DIMM 1
+             size: 16GiB
+     *-pci
+          description: Host bridge
+          product: 440FX - 82441FX PMC [Natoma]
+          vendor: Intel Corporation
+          physical id: 100
+          bus info: pci@0000:00:00.0
+          version: 02
+          width: 32 bits
+          clock: 33MHz
+        *-isa
+             description: ISA bridge
+             product: 82371SB PIIX3 ISA [Natoma/Triton II]
+             vendor: Intel Corporation
+             physical id: 1
+             bus info: pci@0000:00:01.0
+             version: 00
+             width: 32 bits
+             clock: 33MHz
+             capabilities: isa
+             configuration: latency=0
+        *-ide
+             description: IDE interface
+             product: 82371SB PIIX3 IDE [Natoma/Triton II]
+             vendor: Intel Corporation
+             physical id: 1.1
+             bus info: pci@0000:00:01.1
+             version: 00
+             width: 32 bits
+             clock: 33MHz
+             capabilities: ide isa_compatibility_mode-only_controller__supports_bus_mastering bus_master
+             configuration: driver=ata_piix latency=0
+             resources: irq:0 ioport:1f0(size=8) ioport:3f6 ioport:170(size=8) ioport:376 ioport:c0a0(size=16)
+        *-usb
+             description: USB controller
+             product: 82371SB PIIX3 USB [Natoma/Triton II]
+             vendor: Intel Corporation
+             physical id: 1.2
+             bus info: pci@0000:00:01.2
+             version: 01
+             width: 32 bits
+             clock: 33MHz
+             capabilities: uhci bus_master
+             configuration: driver=uhci_hcd latency=0
+             resources: irq:11 ioport:c040(size=32)
+           *-usbhost
+                product: UHCI Host Controller
+                vendor: Linux 4.4.0-177-generic uhci_hcd
+                physical id: 1
+                bus info: usb@1
+                logical name: usb1
+                version: 4.04
+                capabilities: usb-1.10
+                configuration: driver=hub slots=2 speed=12Mbit/s
+              *-usb
+                   description: Human interface device
+                   product: QEMU USB Tablet
+                   vendor: QEMU
+                   physical id: 1
+                   bus info: usb@1:1
+                   version: 0.00
+                   serial: 42
+                   capabilities: usb-2.00
+                   configuration: driver=usbhid maxpower=100mA speed=12Mbit/s
+        *-bridge
+             description: Bridge
+             product: 82371AB/EB/MB PIIX4 ACPI
+             vendor: Intel Corporation
+             physical id: 1.3
+             bus info: pci@0000:00:01.3
+             version: 03
+             width: 32 bits
+             clock: 33MHz
+             capabilities: bridge
+             configuration: driver=piix4_smbus latency=0
+             resources: irq:9
+        *-display UNCLAIMED
+             description: VGA compatible controller
+             physical id: 2
+             bus info: pci@0000:00:02.0
+             version: 02
+             width: 32 bits
+             clock: 33MHz
+             capabilities: vga_controller bus_master
+             configuration: latency=0
+             resources: memory:fd000000-fdffffff memory:fea50000-fea50fff memory:fea40000-fea4ffff
+        *-generic
+             description: Unclassified device
+             product: Virtio memory balloon
+             vendor: Red Hat, Inc.
+             physical id: 3
+             bus info: pci@0000:00:03.0
+             version: 00
+             width: 64 bits
+             clock: 33MHz
+             capabilities: bus_master cap_list
+             configuration: driver=virtio-pci latency=0
+             resources: irq:10 ioport:c060(size=32) memory:fe000000-fe003fff
+        *-scsi
+             description: SCSI storage controller
+             product: Virtio SCSI
+             vendor: Red Hat, Inc.
+             physical id: 5
+             bus info: pci@0000:00:05.0
+             version: 00
+             width: 64 bits
+             clock: 33MHz
+             capabilities: scsi msix bus_master cap_list
+             configuration: driver=virtio-pci latency=0
+             resources: irq:10 ioport:c000(size=64) memory:fea51000-fea51fff memory:fe004000-fe007fff
+        *-network
+             description: Ethernet interface
+             product: Virtio network device
+             vendor: Red Hat, Inc.
+             physical id: 12
+             bus info: pci@0000:00:12.0
+             logical name: ens18
+             version: 00
+             serial: 9e:5d:b8:86:31:8e
+             width: 64 bits
+             clock: 33MHz
+             capabilities: msix bus_master cap_list rom ethernet physical
+             configuration: autonegotiation=off broadcast=yes driver=virtio_net driverversion=1.0.0 ip=10.79.6.142 latency=0 link=yes multicast=yes
+             resources: irq:11 ioport:c080(size=32) memory:fea52000-fea52fff memory:fe008000-fe00bfff memory:fea00000-fea3ffff
+        *-pci:0
+             description: PCI bridge
+             product: QEMU PCI-PCI bridge
+             vendor: Red Hat, Inc.
+             physical id: 1e
+             bus info: pci@0000:00:1e.0
+             version: 00
+             slot: 0, chassis 1
+             width: 32 bits
+             clock: 66MHz
+             capabilities: pci slotid normal_decode cap_list
+        *-pci:1
+             description: PCI bridge
+             product: QEMU PCI-PCI bridge
+             vendor: Red Hat, Inc.
+             physical id: 1f
+             bus info: pci@0000:00:1f.0
+             version: 00
+             slot: 0, chassis 2
+             width: 32 bits
+             clock: 66MHz
+             capabilities: pci slotid normal_decode cap_list
+     *-scsi:0
+          physical id: 1
+          logical name: scsi1
+          capabilities: emulated
+        *-cdrom
+             description: DVD reader
+             physical id: 0.0.0
+             bus info: scsi@1:0.0.0
+             logical name: /dev/cdrom
+             logical name: /dev/dvd
+             logical name: /dev/sr0
+             capabilities: audio dvd
+             configuration: status=nodisc
+     *-scsi:1
+          physical id: 2
+          logical name: scsi2
+        *-disk
+             description: SCSI Disk
+             physical id: 0.0.0
+             bus info: scsi@2:0.0.0
+             logical name: /dev/sda
+             size: 100GiB (107GB)
+             capabilities: partitioned partitioned:dos
+             configuration: logicalsectorsize=512 sectorsize=512 signature=6858ea9e
+           *-volume:0
+                description: EXT4 volume
+                vendor: Linux
+                physical id: 1
+                bus info: scsi@2:0.0.0,1
+                logical name: /dev/sda1
+                logical name: /
+                version: 1.0
+                serial: ddde1426-32ad-42a7-930f-b78057851f3e
+                size: 92GiB
+                capacity: 92GiB
+                capabilities: primary journaled extended_attributes large_files huge_files dir_nlink extents ext4 ext2 initialized
+                configuration: created=2017-08-24 19:58:12 filesystem=ext4 lastmountpoint=/ modified=2020-06-08 08:41:04 mount.fstype=ext4 mount.options=rw,relatime,errors=remount-ro,data=ordered mounted=2020-05-06 16:42:37 state=mounted
+           *-volume:1
+                description: Extended partition
+                physical id: 2
+                bus info: scsi@2:0.0.0,2
+                logical name: /dev/sda2
+                size: 8190MiB
+                capacity: 8190MiB
+                capabilities: primary extended partitioned partitioned:extended
+              *-logicalvolume
+                   description: Linux swap / Solaris partition
+                   physical id: 5
+                   logical name: /dev/sda5
+                   capacity: 8189MiB
+                   capabilities: nofs
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                4
+On-line CPU(s) list:   0-3
+Thread(s) per core:    1
+Core(s) per socket:    4
+Socket(s):             1
+NUMA node(s):          1
+Vendor ID:             GenuineIntel
+CPU family:            15
+Model:                 6
+Model name:            Common KVM processor
+Stepping:              1
+CPU MHz:               2799.998
+BogoMIPS:              5599.99
+Hypervisor vendor:     KVM
+Virtualization type:   full
+L1d cache:             32K
+L1i cache:             32K
+L2 cache:              4096K
+L3 cache:              16384K
+NUMA node0 CPU(s):     0-3
+Flags:                 fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx lm constant_tsc nopl xtopology tsc_known_freq pni cx16 x2apic hypervisor lahf_lm kaiser
+Linux ubuntu 4.4.0-177-generic #207-Ubuntu SMP Mon Mar 16 01:16:10 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux

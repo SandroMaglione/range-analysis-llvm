@@ -1,0 +1,6 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: while.cond
+   k.0(1, +Inf) = MAX
+   add(2, +Inf) = MAX

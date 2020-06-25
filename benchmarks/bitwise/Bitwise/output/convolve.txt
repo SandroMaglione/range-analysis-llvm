@@ -1,0 +1,84 @@
+--- VALUE-RANGES ---
+BB: entry
+
+BB: for.cond
+   i.0(0, 16) = 17 {6bit}
+
+BB: for.body
+   i.0(0, 15) = 16 {5bit}
+   inc(1, 16) = 16 {5bit}
+
+BB: for.cond1
+   i.1(0, 256) = 257 {10bit}
+   i.0(16, 16) = 1 {2bit}
+
+BB: for.body3
+   i.1(0, 255) = 256 {9bit}
+   inc7(1, 256) = 256 {9bit}
+
+BB: for.cond9
+   i.1(256, 256) = 1 {2bit}
+   i.2(0, 240) = 241 {9bit}
+
+BB: for.body11
+   mul36(-Inf, +Inf) = MAX
+   i.2(0, 239) = 240 {9bit}
+   add37(-Inf, +Inf) = MAX
+   add38(5, 244) = 240 {9bit}
+   mul(-Inf, +Inf) = MAX
+   add(1, 240) = 240 {9bit}
+   mul18(-Inf, +Inf) = MAX
+   add19(-Inf, +Inf) = MAX
+   add20(2, 241) = 240 {9bit}
+   mul24(-Inf, +Inf) = MAX
+   add25(-Inf, +Inf) = MAX
+   add26(3, 242) = 240 {9bit}
+   mul30(-Inf, +Inf) = MAX
+   add31(-Inf, +Inf) = MAX
+   add32(4, 243) = 240 {9bit}
+   mul84(-Inf, +Inf) = MAX
+   add85(-Inf, +Inf) = MAX
+   add86(13, 252) = 240 {9bit}
+   mul90(-Inf, +Inf) = MAX
+   add91(-Inf, +Inf) = MAX
+   add92(14, 253) = 240 {9bit}
+   mul96(-Inf, +Inf) = MAX
+   add97(-Inf, +Inf) = MAX
+   mul42(-Inf, +Inf) = MAX
+   add43(-Inf, +Inf) = MAX
+   add44(6, 245) = 240 {9bit}
+   mul48(-Inf, +Inf) = MAX
+   add49(-Inf, +Inf) = MAX
+   add50(7, 246) = 240 {9bit}
+   mul54(-Inf, +Inf) = MAX
+   add55(-Inf, +Inf) = MAX
+   add56(8, 247) = 240 {9bit}
+   mul60(-Inf, +Inf) = MAX
+   add61(-Inf, +Inf) = MAX
+   add62(9, 248) = 240 {9bit}
+   mul66(-Inf, +Inf) = MAX
+   add67(-Inf, +Inf) = MAX
+   add68(10, 249) = 240 {9bit}
+   mul72(-Inf, +Inf) = MAX
+   add73(-Inf, +Inf) = MAX
+   add74(11, 250) = 240 {9bit}
+   mul78(-Inf, +Inf) = MAX
+   add79(-Inf, +Inf) = MAX
+   add80(12, 251) = 240 {9bit}
+   add98(15, 254) = 240 {9bit}
+   mul102(-Inf, +Inf) = MAX
+   add103(-Inf, +Inf) = MAX
+
+BB: for.cond109
+   i.2(240, 240) = 1 {2bit}
+   i.3(0, 256) = 257 {10bit}
+   checksum.0(-Inf, +Inf) = MAX
+
+BB: for.body111
+   and(-Inf, +Inf) = MAX
+   i.3(0, 255) = 256 {9bit}
+   add114(-Inf, +Inf) = MAX
+   inc116(1, 256) = 256 {9bit}
+
+BB: for.end117
+   i.3(256, 256) = 1 {2bit}

@@ -1,0 +1,69 @@
+--- VALUE-RANGES ---
+BB: for.body48
+   i.0(0, 4) = 5 {4bit}
+   inc52(1, 5) = 5 {4bit}
+
+BB: entry
+
+BB: for.cond
+   k.0(0, 1026) = 1027 {12bit}
+
+BB: for.body
+   k.0(0, 1025) = 1026 {12bit}
+   add(1, 1026) = 1026 {12bit}
+   add7(2, 1027) = 1026 {12bit}
+
+BB: for.body12
+   k.1(-Inf, 1023) = MAX
+   add16(-Inf, 1024) = MAX
+   add20(-Inf, 1025) = MAX
+
+BB: for.cond79
+   k.1(1024, +Inf) = MAX
+   checksum.0(-Inf, +Inf) = MAX
+   k.2(0, 1024) = 1025 {12bit}
+
+BB: for.cond10
+   k.0(1026, 1026) = 1 {2bit}
+   k.1(-Inf, +Inf) = MAX
+
+BB: for.end72
+   i.1(9, +Inf) = MAX
+
+BB: for.cond46
+   i.0(0, 5) = 6 {4bit}
+
+BB: for.cond54
+   i.0(5, 5) = 1 {2bit}
+   i.1(0, +Inf) = MAX
+
+BB: for.inc70
+   j.0(5, +Inf) = MAX
+   inc71(-Inf, +Inf) = MAX
+
+BB: for.body56
+   i.1(0, 8) = 9 {5bit}
+
+BB: for.cond59
+   temp.0(-Inf, +Inf) = MAX
+   j.0(0, +Inf) = MAX
+
+BB: for.inc67
+   temp.0(-Inf, +Inf) = MAX
+   temp.1(-Inf, +Inf) = MAX
+   inc68(-Inf, +Inf) = MAX
+
+BB: for.body61
+   j.0(0, 4) = 5 {4bit}
+
+BB: if.then
+   temp.0(-Inf, +Inf) = MAX
+
+BB: for.body81
+   k.2(0, 1023) = 1024 {11bit}
+   add84(-Inf, +Inf) = MAX
+   and(-Inf, +Inf) = MAX
+   inc86(1, 1024) = 1024 {11bit}
+
+BB: for.end87
+   k.2(1024, 1024) = 1 {2bit}

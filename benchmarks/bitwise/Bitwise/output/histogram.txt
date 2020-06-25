@@ -1,0 +1,80 @@
+--- VALUE-RANGES ---
+BB: for.cond46
+   i.3(256, 256) = 1 {2bit}
+   i.4(0, +Inf) = MAX
+   checksum.0(-Inf, +Inf) = MAX
+
+BB: entry
+
+BB: for.cond
+   i.0(0, +Inf) = MAX
+
+BB: for.inc6
+   j.0(128, 128) = 1 {2bit}
+   inc7(-Inf, +Inf) = MAX
+
+BB: for.cond1
+   i.0(0, 127) = 128 {8bit}
+   j.0(0, 128) = 129 {9bit}
+
+BB: for.cond9
+   i.0(128, +Inf) = MAX
+   i.1(0, 256) = 257 {10bit}
+
+BB: for.body3
+   j.0(0, 127) = 128 {8bit}
+   inc(1, 128) = 128 {8bit}
+
+BB: for.inc32
+   j.1(128, 128) = 1 {2bit}
+   inc33(-Inf, +Inf) = MAX
+
+BB: for.body11
+   inc15(1, 256) = 256 {9bit}
+   i.1(0, 255) = 256 {9bit}
+
+BB: for.cond17
+   i.1(256, 256) = 1 {2bit}
+   i.2(0, +Inf) = MAX
+
+BB: for.cond20
+   i.2(0, 127) = 128 {8bit}
+   j.1(0, 128) = 129 {9bit}
+
+BB: for.cond35
+   cdf.0(-Inf, +Inf) = MAX
+   i.2(128, +Inf) = MAX
+   i.3(0, 256) = 257 {10bit}
+
+BB: for.body22
+   j.1(0, 127) = 128 {8bit}
+   add(-Inf, +Inf) = MAX
+   inc30(1, 128) = 128 {8bit}
+
+BB: for.body37
+   shl(-Inf, +Inf) = MAX
+   div(-Inf, +Inf) = MAX
+   add40(-Inf, +Inf) = MAX
+   shr(-Inf, +Inf) = MAX
+   i.3(0, 255) = 256 {9bit}
+   mul(-Inf, +Inf) = MAX
+   and(-Inf, +Inf) = MAX
+   inc44(1, 256) = 256 {9bit}
+
+BB: for.inc71
+   j.2(128, 128) = 1 {2bit}
+   inc72(-Inf, +Inf) = MAX
+
+BB: for.cond49
+   i.4(0, 127) = 128 {8bit}
+   j.2(0, 128) = 129 {9bit}
+   checksum.1(-Inf, +Inf) = MAX
+
+BB: for.end73
+   i.4(128, +Inf) = MAX
+
+BB: for.body51
+   j.2(0, 127) = 128 {8bit}
+   add66(-Inf, +Inf) = MAX
+   and67(-Inf, +Inf) = MAX
+   inc69(1, 128) = 128 {8bit}
